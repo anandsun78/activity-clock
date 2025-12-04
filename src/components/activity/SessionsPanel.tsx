@@ -92,7 +92,7 @@ const SessionsPanel: React.FC<SessionsPanelProps> = ({
       </div>
 
       {filteredSessions.length === 0 ? (
-        <div style={{ fontSize: 14 }} className="ac-muted">
+        <div style={{ fontSize: 15, fontWeight: 500 }} className="ac-muted">
           No sessions match your filters. Try turning off the filter or logging a
           session.
         </div>

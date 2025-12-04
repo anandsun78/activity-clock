@@ -136,7 +136,7 @@ function DonutChart({ rows }: { rows: DonutRow[] }) {
             cy={size / 2}
             r={radius}
             fill="none"
-            stroke="rgba(255,255,255,0.12)"
+            stroke="#e2e8f0"
             strokeWidth={stroke}
           />
           {filtered.map((r) => {
@@ -165,7 +165,7 @@ function DonutChart({ rows }: { rows: DonutRow[] }) {
           dominantBaseline="middle"
           textAnchor="middle"
           fontSize="14"
-          fill="#e2e8f0"
+          fill="#0f172a"
         >
           Today (%)
         </text>
@@ -191,7 +191,7 @@ function DonutChart({ rows }: { rows: DonutRow[] }) {
                 <div
                   style={{
                     fontSize: 13,
-                    color: "#e2e8f0",
+                    color: "#0f172a",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                     whiteSpace: "nowrap",
@@ -199,7 +199,7 @@ function DonutChart({ rows }: { rows: DonutRow[] }) {
                 >
                   {r.activity}
                 </div>
-                <div style={{ fontSize: 12, color: "#cbd5e1" }}>
+                <div style={{ fontSize: 12, color: "var(--ac-muted)" }}>
                   {r.pct.toFixed(1)}% • {Math.round(r.minutes)}m
                 </div>
               </div>
@@ -213,7 +213,7 @@ function Bar({ pct }) {
   return (
     <div
       style={{
-        background: "rgba(255,255,255,0.08)",
+        background: "#e2e8f0",
         borderRadius: 8,
         height: 10,
       }}
@@ -295,7 +295,7 @@ function MultiLinePerDay({
         onMouseMove={onMove}
         onMouseLeave={onLeave}
         style={{
-          background: "rgba(255,255,255,0.03)",
+          background: "#ffffff",
           border: "1px solid var(--ac-border)",
           borderRadius: 12,
         }}
@@ -555,7 +555,7 @@ function Sparkline({
         y="0"
         width={w}
         height={h}
-        fill="rgba(255,255,255,0.04)"
+        fill="#ffffff"
         rx="8"
       />
       {weekendRects}
@@ -594,7 +594,7 @@ function ActivityCardMini({
       onClick={() => onFocus(name)}
       style={{
         border: `1px solid ${focused ? color : "var(--ac-border)"}`,
-        background: "rgba(255,255,255,0.05)",
+        background: "#ffffff",
         borderRadius: 12,
         padding: 10,
         cursor: "pointer",
@@ -1268,8 +1268,8 @@ export default function ActivityClock() {
                 padding: "10px 12px",
                 borderRadius: 10,
                 border: "1px solid var(--ac-border)",
-                background: "rgba(255,255,255,0.04)",
-                color: "#e2e8f0",
+                background: "#ffffff",
+                color: "#0f172a",
               }}
             />
             <input
@@ -1283,8 +1283,8 @@ export default function ActivityClock() {
                 padding: "10px 12px",
                 borderRadius: 10,
                 border: "1px solid var(--ac-border)",
-                background: "rgba(255,255,255,0.04)",
-                color: "#e2e8f0",
+                background: "#ffffff",
+                color: "#0f172a",
               }}
             />
             <button

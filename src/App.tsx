@@ -43,13 +43,13 @@ function NavBar() {
               style={({ isActive }) => ({
                 padding: "8px 12px",
                 borderRadius: 12,
-                border: `1px solid ${isActive ? "var(--primary-soft)" : "var(--border)"}`,
-                background: isActive ? "rgba(124, 58, 237, 0.18)" : "rgba(255,255,255,0.03)",
-                color: "#e2e8f0",
+                border: `1px solid ${isActive ? "var(--primary)" : "var(--border)"}`,
+                background: isActive ? "rgba(124, 58, 237, 0.12)" : "#ffffff",
+                color: "#0f172a",
                 fontSize: 14,
                 fontWeight: 600,
                 textDecoration: "none",
-                boxShadow: isActive ? "0 10px 30px rgba(124, 58, 237, 0.25)" : "none",
+                boxShadow: isActive ? "0 10px 30px rgba(124, 58, 237, 0.25)" : "0 2px 10px rgba(15,23,42,0.06)",
               })}
             >
               {item.label}

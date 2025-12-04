@@ -1,9 +1,9 @@
 :root {
-  --ac-surface: rgba(255, 255, 255, 0.04);
-  --ac-surface-strong: rgba(255, 255, 255, 0.07);
-  --ac-border: rgba(255, 255, 255, 0.12);
-  --ac-muted: #cbd5e1;
-  --ac-ink: #e2e8f0;
+  --ac-surface: #ffffff;
+  --ac-surface-strong: #f5f7fb;
+  --ac-border: #e2e8f0;
+  --ac-muted: #475569;
+  --ac-ink: #0f172a;
 }
 
 .ac-section {
@@ -25,15 +25,16 @@
   border: 1px solid var(--ac-border);
   background: var(--ac-surface);
   color: var(--ac-ink);
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 600;
   transition: border-color 0.16s ease, background 0.16s ease, color 0.16s ease,
     box-shadow 0.16s ease;
 }
 
 .ac-toggle.is-active {
-  border-color: var(--primary-soft);
-  background: rgba(124, 58, 237, 0.15);
-  box-shadow: 0 6px 22px rgba(124, 58, 237, 0.2);
+  border-color: var(--primary);
+  background: rgba(124, 58, 237, 0.08);
+  box-shadow: 0 6px 22px rgba(124, 58, 237, 0.18);
 }
 
 .ac-muted {
@@ -58,7 +59,7 @@
 
 .ac-session-card.gap {
   border-color: rgba(248, 113, 113, 0.45);
-  background: rgba(248, 113, 113, 0.08);
+  background: rgba(248, 113, 113, 0.1);
 }
 
 .ac-session-head {
@@ -77,7 +78,8 @@
   border: 1px solid var(--ac-border);
   background: var(--ac-surface-strong);
   color: var(--ac-ink);
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .ac-session-activity.gap {
@@ -95,8 +97,8 @@
 
 .ac-session-duration {
   font-weight: 700;
-  font-size: 15px;
-  padding: 4px 10px;
+  font-size: 16px;
+  padding: 6px 12px;
   border-radius: 10px;
   border: 1px solid var(--ac-border);
   background: var(--ac-surface-strong);
@@ -104,17 +106,17 @@
 }
 
 .ac-session-body {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--ac-surface-strong);
   border-radius: 10px;
-  padding: 10px;
+  padding: 12px;
   color: var(--ac-ink);
   border: 1px solid var(--ac-border);
 }
 
 .ac-session-time {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 13px;
-  color: var(--ac-muted);
+  font-size: 14px;
+  color: #0f172a;
 }
 
 .ac-chip-strong {
