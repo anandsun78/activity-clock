@@ -1,0 +1,30 @@
+[build]
+  command   = "npm run build"
+  publish   = "build"                 # CRA builds to /build (use "dist" for Vite)
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+  # Important if you use mongoose in functions:
+  external_node_modules = ["mongoose"]
+
+# --- Redirects ---
+# 1) API proxy: /api/* -> /.netlify/functions/*
+[[redirects]]
+  from = "/api/*"
+  to   = "/.netlify/functions/:splat"
+  status = 200
+
+# 2) SPA fallback: send all non-file routes to index.html (React Router)
+[[redirects]]
+  from = "/*"
+  to   = "/index.html"
+  status = 200
+
+# --- Local dev proxy (Netlify Dev) ---
+[dev]
+  framework  = "#custom"
+  command    = "npm start"            # CRA; for Vite use "npm run dev"
+  targetPort = 3000                   # your app dev server port
+  port       = 8888                   # Netlify Dev proxy port
+  functions  = "netlify/functions"    # where your functions live
