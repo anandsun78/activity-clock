@@ -97,7 +97,7 @@ const SessionsPanel: React.FC<SessionsPanelProps> = ({
           session.
         </div>
       ) : (
-        <div className="ac-session-grid">
+        <div className="ac-session-grid" style={{ alignItems: "start" }}>
           {filteredSessions.map((s, i) => {
             const isGap = s.activity === "__GAP__";
             const dur = isGap
