@@ -387,3 +387,56 @@
   gap: 8px;
   flex-wrap: wrap;
 }
+
+/* Vacation days panel */
+.vacation-card .card-header {
+  flex-wrap: wrap;
+}
+
+.vacation-controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.vacation-controls input[type="date"] {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #0f172a;
+}
+
+.vacation-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.vacation-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #f8fafc;
+  color: #0f172a;
+  font-size: 0.85rem;
+}
+
+.vacation-pill button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.vacation-empty {
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: #6b7280;
+}

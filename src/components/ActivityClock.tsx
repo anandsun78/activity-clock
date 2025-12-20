@@ -9,8 +9,13 @@ import {
   startOfDayEdmonton,
   minutesSinceEdmontonMidnight,
 } from "../dateUtils";
+import {
+  filterOutVacationLogs,
+  useVacationDays,
+} from "../vacationDays";
 import { colorForActivity, fmtM } from "./activity/utils";
 import SessionsPanel from "./activity/SessionsPanel";
+import VacationDaysPanel from "./VacationDaysPanel";
 
 type Session = {
   start: string;
@@ -662,6 +667,7 @@ export default function ActivityClock() {
   });
   const [history, setHistory] = useState<DayLog[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [vacationDays] = useVacationDays();
 
   const [mergeAdjacent, setMergeAdjacent] = useState<boolean>(true);
   const [showGaps, setShowGaps] = useState<boolean>(true);
@@ -794,6 +800,11 @@ export default function ActivityClock() {
     return { rows, sinceMidnight, totalTracked };
   }, [todayLog, now]);
 
+  const filteredHistory = useMemo(
+    () => filterOutVacationLogs(history),
+    [history, vacationDays]
+  );
+
   // Historical (per day averages)
   const historical = useMemo(() => {
     const perDayTotals: Record<
@@ -802,7 +813,7 @@ export default function ActivityClock() {
     > = {};
     let dayCount = 0;
     let sumDailyTracked = 0;
-    for (const log of history) {
+    for (const log of filteredHistory) {
       if (!log?.sessions) continue;
       const daily: Record<string, number> = {};
       for (const s of log.sessions)
@@ -844,12 +855,12 @@ export default function ActivityClock() {
     const avgTrackedPerDay = dayCount > 0 ? sumDailyTracked / dayCount : 0;
 
     return { avgPerDay, deltas, dayCount, avgTrackedPerDay };
-  }, [history, todayBreakdown]);
+  }, [filteredHistory, todayBreakdown]);
 
   // Build days + activity list for trends
   const trendData = useMemo(() => {
     const todayKey = yyyyMmDdEdmonton(now);
-    const days = history.map((log) => {
+    const days = filteredHistory.map((log) => {
       const totals: Record<string, number> = {};
       for (const s of log?.sessions || []) {
         const m = diffMinutes(s.start, s.end);
@@ -880,7 +891,7 @@ export default function ActivityClock() {
     ).sort((a, b) => a.localeCompare(b));
 
     return { days, activities };
-  }, [history, now]);
+  }, [filteredHistory, now]);
 
   // Apply windowing + scope (all/weekdays/weekends)
   const filteredTrendDays = useMemo(() => {
@@ -1509,6 +1520,8 @@ export default function ActivityClock() {
         </div>
       </div>
 
+      <VacationDaysPanel />
+
       {/* Today’s Breakdown */}
       <div className="card metrics-card">
         <div className="card-header">
@@ -1543,7 +1556,6 @@ export default function ActivityClock() {
         activitiesToday={activitiesToday}
         totalTodayMins={totalTodayMins}
       />
-
       {loading && <div className="chip">Loading…</div>}
     </div>
   );

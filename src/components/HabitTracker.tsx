@@ -9,6 +9,12 @@ import React, {
 // import { computeStreak } from "../utils/streakUtils";
 import "./HabitTracker.css";
 import { yyyyMmDdEdmonton, startOfDayEdmonton } from "../dateUtils"; // Edmonton-aware day key + start-of-day
+import {
+  filterOutVacationMap,
+  isVacationDay,
+  useVacationDays,
+} from "../vacationDays";
+import VacationDaysPanel from "./VacationDaysPanel";
 
 type HabitData = Record<string, any>;
 type HabitHistoryMap = Record<string, HabitData>;
@@ -82,6 +88,10 @@ function getHabitStreak(habitName: string, historyMap: HabitHistoryMap) {
   for (let i = 0; i < 3660; i++) {
     // ~10 years max
     const key = yyyyMmDdEdmonton(cursor);
+    if (isVacationDay(key)) {
+      cursor.setUTCDate(cursor.getUTCDate() - 1);
+      continue; // vacation days neither break nor extend streaks
+    }
     const day = historyMap[key];
     if (!day || !day[habitName]) break;
     streak++;
@@ -99,6 +109,7 @@ const HabitTracker = () => {
   const [history, setHistory] = useState<HabitHistoryMap>({}); // { 'YYYY-MM-DD': {...} }
   const [loading, setLoading] = useState<boolean>(true);
   const [historyLoading, setHistoryLoading] = useState<boolean>(true);
+  const [vacationDays] = useVacationDays();
 
   useEffect(() => {
     document.title = "activity-clock – Habit Tracker";
@@ -266,9 +277,17 @@ const HabitTracker = () => {
     : null;
 
   // ---------- merge history with today (so fresh edits count) ----------
+  const filteredHistory = useMemo(
+    () => filterOutVacationMap(history),
+    [history, vacationDays]
+  );
+
   const mergedHistory = useMemo(
-    () => ({ ...history, [today]: habitData }),
-    [history, habitData, today]
+    () =>
+      isVacationDay(today)
+        ? filteredHistory
+        : { ...filteredHistory, [today]: habitData },
+    [filteredHistory, habitData, today]
   );
 
   // ---------- aggregates (ALL data since START_DATE) ----------
@@ -957,6 +976,7 @@ const HabitTracker = () => {
           </div>
         </div>
       </section>
+      <VacationDaysPanel />
     </div>
   );
 };
