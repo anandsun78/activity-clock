@@ -4,644 +4,32 @@ import "./ActivityClock.css";
 import {
   yyyyMmDdEdmonton,
   formatEdmonton,
-  formatEdmontonTime,
   diffMinutes,
   startOfDayEdmonton,
   minutesSinceEdmontonMidnight,
 } from "../dateUtils";
+import { filterOutVacationLogs, useVacationDays } from "../vacationDays";
+import { fmtM } from "./activity/utils";
 import {
-  filterOutVacationLogs,
-  useVacationDays,
-} from "../vacationDays";
-import { colorForActivity, fmtM } from "./activity/utils";
+  ActivityCardMini,
+  Bar,
+  DonutChart,
+  MultiLinePerDay,
+} from "./activity/ActivityCharts";
+import {
+  aggregateTopN,
+  buildSeries,
+  isWeekend,
+  splitByEdmontonMidnight,
+  upsertTodayInHistory,
+} from "./activity/helpers";
+import type { DayLog, LoggedSegments } from "./activity/types";
 import SessionsPanel from "./activity/SessionsPanel";
 import VacationDaysPanel from "./VacationDaysPanel";
-
-type Session = {
-  start: string;
-  end: string;
-  activity: string;
-};
-
-type DayLog = {
-  date: string;
-  sessions: Session[];
-};
-
-type TrendDay = {
-  date: string;
-  weekend: boolean;
-  totals: Record<string, number>;
-  totalMin: number;
-};
-
-type TrendPoint = {
-  date: string;
-  m: number;
-  pct: number;
-  weekend: boolean;
-};
-
-type TrendSeries = Record<string, TrendPoint[]>;
-
-type LoggedSegments = {
-  prevStart: string;
-  segments: { start: string; end: string; activity: string }[];
-} | null;
+import { Card, CardHeader, Chip } from "./shared/Card";
 
 const START_DATE_ISO = "2025-12-01";
 const TOP_N = 7;
-function isWeekend(iso: string) {
-  const d = new Date(iso + "T00:00:00");
-  const x = d.getDay();
-  return x === 0 || x === 6;
-}
-
-/* ---------- helpers ---------- */
-function aggregateTopN(
-  totalsMap: Record<string, number>,
-  topN = TOP_N
-): Record<string, number> {
-  const entries = Object.entries(totalsMap).filter(
-    ([a]) => a !== "Untracked"
-  ) as [string, number][];
-  entries.sort((a, b) => b[1] - a[1]);
-  const keep = new Set(entries.slice(0, topN).map(([a]) => a));
-  const out: Record<string, number> = {};
-  let other = 0;
-  for (const [a, m] of entries) {
-    if (keep.has(a)) out[a] = (out[a] || 0) + m;
-    else other += m;
-  }
-  if (other > 0) out["Other"] = other;
-  return out;
-}
-function buildSeries(days: TrendDay[], chosenActivities: string[]) {
-  const byActivity: TrendSeries = {};
-  const maxMPerActivity: Record<string, number> = {};
-  for (const a of chosenActivities) {
-    byActivity[a] = [];
-    maxMPerActivity[a] = 0;
-  }
-  for (const d of days) {
-    const total = Math.max(1, d.totalMin);
-    for (const a of chosenActivities) {
-      const m = d.totals[a] || 0;
-      const pct = (m / total) * 100;
-      byActivity[a].push({ date: d.date, m, pct, weekend: d.weekend });
-      if (m > maxMPerActivity[a]) maxMPerActivity[a] = m;
-    }
-  }
-  return { byActivity, maxMPerActivity };
-}
-
-/* Keep Trends in sync with today's edits */
-function upsertTodayInHistory(
-  prevHistory: DayLog[],
-  newDayDoc: DayLog
-): DayLog[] {
-  const idx = prevHistory.findIndex((d) => d?.date === newDayDoc.date);
-  if (idx === -1) return [...prevHistory, newDayDoc];
-  const copy = prevHistory.slice();
-  copy[idx] = newDayDoc;
-  return copy;
-}
-
-/* ---------- tiny charts kept ---------- */
-type DonutRow = { activity: string; pct: number; minutes: number };
-
-function DonutChart({ rows }: { rows: DonutRow[] }) {
-  const size = 180,
-    stroke = 24,
-    radius = (size - stroke) / 2,
-    circ = 2 * Math.PI * radius;
-  const filtered = rows.filter((r) => r.pct > 0.2);
-  let offset = 0;
-  const legendGrid = {
-    display: "grid",
-    gap: 8,
-    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-    alignItems: "start",
-    minWidth: 220,
-    flex: 1,
-  };
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 16,
-        flexWrap: "wrap",
-      }}
-    >
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        <g transform={`rotate(-90 ${size / 2} ${size / 2})`}>
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            fill="none"
-            stroke="#e2e8f0"
-            strokeWidth={stroke}
-          />
-          {filtered.map((r) => {
-            const len = (r.pct / 100) * circ;
-            const dasharray = `${len} ${circ - len}`;
-            const dashoffset = circ * offset;
-            offset += r.pct / 100;
-            return (
-              <circle
-                key={r.activity}
-                cx={size / 2}
-                cy={size / 2}
-                r={radius}
-                fill="none"
-                stroke={colorForActivity(r.activity)}
-                strokeWidth={stroke}
-                strokeDasharray={dasharray}
-                strokeDashoffset={dashoffset}
-              />
-            );
-          })}
-        </g>
-        <text
-          x="50%"
-          y="50%"
-          dominantBaseline="middle"
-          textAnchor="middle"
-          fontSize="14"
-          fill="#0f172a"
-        >
-          Today (%)
-        </text>
-      </svg>
-      <div style={legendGrid}>
-        {filtered.map((r) => (
-          <div
-            key={r.activity}
-            style={{ display: "flex", alignItems: "center", gap: 8 }}
-            title={`${r.activity} — ${r.pct.toFixed(1)}% • ${Math.round(
-              r.minutes
-            )}m`}
-          >
-            <span
-              style={{
-                width: 10,
-                height: 10,
-                borderRadius: 2,
-                background: colorForActivity(r.activity),
-              }}
-              />
-              <div style={{ minWidth: 0 }}>
-                <div
-                  style={{
-                    fontSize: 13,
-                    color: "#0f172a",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {r.activity}
-                </div>
-                <div style={{ fontSize: 12, color: "var(--ac-muted)" }}>
-                  {r.pct.toFixed(1)}% • {Math.round(r.minutes)}m
-                </div>
-              </div>
-            </div>
-          ))}
-      </div>
-    </div>
-  );
-}
-function Bar({ pct }) {
-  return (
-    <div
-      style={{
-        background: "#e2e8f0",
-        borderRadius: 8,
-        height: 10,
-      }}
-    >
-      <div
-        style={{
-          width: `${Math.max(0, Math.min(100, pct)).toFixed(2)}%`,
-          height: 10,
-          borderRadius: 8,
-          background: "linear-gradient(90deg, #a855f7, #22d3ee)",
-        }}
-      />
-    </div>
-  );
-}
-
-/* ---------- Multi-series Minutes/% per day line chart with toggles ---------- */
-type MultiLinePerDayProps = {
-  days: TrendDay[];
-  seriesByActivity: TrendSeries;
-  selectable: string[];
-  selectedSet: Set<string>;
-  onToggle: (name: string) => void;
-  mode: "m" | "pct";
-};
-
-function MultiLinePerDay({
-  days,
-  seriesByActivity,
-  selectable,
-  selectedSet,
-  onToggle,
-  mode,
-}: MultiLinePerDayProps) {
-  const pad = { l: 44, r: 12, t: 10, b: 26 };
-  const W = 760,
-    H = 240;
-  const stepX = days.length > 1 ? (W - pad.l - pad.r) / (days.length - 1) : 0;
-
-  const visibles = selectable.filter((a) => selectedSet.has(a));
-  const key = mode === "pct" ? "pct" : "m";
-
-  let maxY;
-  if (mode === "pct") {
-    const maxSeen = Math.max(
-      1,
-      ...visibles.flatMap((a) =>
-        (seriesByActivity[a] || []).map((p) => p.pct || 0)
-      )
-    );
-    maxY = Math.min(100, Math.max(25, Math.ceil(maxSeen / 10) * 10));
-  } else {
-    const maxSeen = Math.max(
-      1,
-      ...visibles.flatMap((a) =>
-        (seriesByActivity[a] || []).map((p) => p.m || 0)
-      )
-    );
-    maxY = Math.max(60, Math.ceil(maxSeen / 30) * 30);
-  }
-  const yToPix = (v) => pad.t + (1 - v / maxY) * (H - pad.t - pad.b);
-
-  const labelEvery = Math.max(1, Math.ceil(days.length / 8));
-
-  const [hover, setHover] = useState<{ i: number; x: number } | null>(null);
-  const onMove = (e: React.MouseEvent<SVGSVGElement, MouseEvent>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left - pad.l;
-    const i = Math.round(x / stepX);
-    if (i >= 0 && i < days.length) setHover({ i, x: pad.l + i * stepX });
-  };
-  const onLeave = () => setHover(null);
-
-  return (
-    <div style={{ overflowX: "auto" }}>
-      <svg
-        width={W}
-        height={H}
-        onMouseMove={onMove}
-        onMouseLeave={onLeave}
-        style={{
-          background: "#ffffff",
-          border: "1px solid var(--ac-border)",
-          borderRadius: 12,
-        }}
-      >
-        {days.map((d, i) =>
-          d.weekend && stepX > 0 ? (
-            <rect
-              key={`wk-${i}`}
-              x={pad.l + i * stepX - stepX / 2}
-              y={pad.t}
-              width={stepX}
-              height={H - pad.t - pad.b}
-              fill="#94a3b8"
-              opacity="0.12"
-            />
-          ) : null
-        )}
-
-        <line
-          x1={pad.l}
-          y1={H - pad.b}
-          x2={W - pad.r}
-          y2={H - pad.b}
-          stroke="rgba(255,255,255,0.16)"
-        />
-        <line
-          x1={pad.l}
-          y1={pad.t}
-          x2={W - pad.r}
-          y2={H - pad.b}
-          stroke="rgba(255,255,255,0.16)"
-        />
-
-        {[0, 0.25, 0.5, 0.75, 1].map((fr) => {
-          const y = yToPix(fr * maxY);
-          const label =
-            mode === "pct" ? `${Math.round(fr * maxY)}%` : fmtM(fr * maxY);
-          return (
-            <g key={fr}>
-              <line
-                x1={pad.l}
-                y1={y}
-                x2={W - pad.r}
-                y2={y}
-                stroke="rgba(255,255,255,0.08)"
-              />
-              <text
-                x={pad.l - 6}
-                y={y}
-                textAnchor="end"
-                alignmentBaseline="middle"
-                fontSize="11"
-                fill="#cbd5e1"
-              >
-                {label}
-              </text>
-            </g>
-          );
-        })}
-
-        {days.map((d, i) =>
-          i % labelEvery === 0 ? (
-            <text
-              key={d.date}
-              x={pad.l + i * stepX}
-              y={H - 8}
-              textAnchor="middle"
-              fontSize="11"
-              fill="#cbd5e1"
-            >
-              {d.date.slice(5)}
-            </text>
-          ) : null
-        )}
-
-        {visibles.map((name) => {
-          const pts = seriesByActivity[name] || [];
-          const d = pts
-            .map(
-              (p, i) =>
-                `${i === 0 ? "M" : "L"}${pad.l + i * stepX},${yToPix(
-                  p[key] || 0
-                )}`
-            )
-            .join(" ");
-          const c = colorForActivity(name);
-          return (
-            <path key={name} d={d} fill="none" stroke={c} strokeWidth="2" />
-          );
-        })}
-
-        {hover && (
-          <>
-            <line
-              x1={hover.x}
-              y1={pad.t}
-              x2={hover.x}
-              y2={H - pad.b}
-              stroke="#9ca3af"
-              strokeDasharray="4 4"
-            />
-            {visibles.map((name) => {
-              const pts = seriesByActivity[name] || [];
-              const p = pts[hover.i];
-              if (!p) return null;
-              return (
-                <circle
-                  key={`dot-${name}`}
-                  cx={hover.x}
-                  cy={yToPix(p[key] || 0)}
-                  r="3"
-                  fill={colorForActivity(name)}
-                  stroke="#fff"
-                  strokeWidth="1.5"
-                />
-              );
-            })}
-          </>
-        )}
-      </svg>
-
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
-        {selectable.map((name) => {
-          const active = selectedSet.has(name);
-          const c = colorForActivity(name);
-          return (
-            <button
-              key={name}
-              onClick={() => onToggle(name)}
-              style={{
-                cursor: "pointer",
-                padding: "6px 10px",
-                borderRadius: 10,
-                border: `1px solid ${active ? c : "#e5e7eb"}`,
-                background: active ? "#ffffff" : "#f8fafc",
-                color: "#111827",
-                fontSize: 13,
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-              }}
-              title={active ? "Hide" : "Show"}
-            >
-              <span
-                style={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: 2,
-                  background: c,
-                  opacity: active ? 1 : 0.35,
-                }}
-              />
-              {name}
-              {active && (
-                <span style={{ fontSize: 11, color: "var(--ac-muted)" }}>✓</span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {hover && (
-        <div
-          style={{
-            marginTop: 8,
-            padding: 10,
-            border: "1px solid #e5e7eb",
-            borderRadius: 10,
-            background: "#fff",
-            display: "inline-block",
-            minWidth: 220,
-          }}
-        >
-          <div style={{ fontWeight: 700, marginBottom: 6 }}>
-            {days[hover.i].date}
-          </div>
-          {visibles.map((n) => {
-            const p = seriesByActivity[n]?.[hover.i];
-            const val =
-              mode === "pct" ? `${Math.round(p?.pct || 0)}%` : fmtM(p?.m || 0);
-            return (
-              <div
-                key={`t-${n}`}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  gap: 12,
-                  fontSize: 13,
-                  marginTop: 2,
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span
-                    style={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: 2,
-                      background: colorForActivity(n),
-                    }}
-                  />
-                  {n}
-                </div>
-                <div style={{ color: "#374151" }}>{val}</div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ------------ Small-multiples sparkline (kept) ------------ */
-function Sparkline({
-  points,
-  mode = "m",
-  color,
-  height = 44,
-  pad = 4,
-}: {
-  points: TrendPoint[];
-  mode?: "m" | "pct";
-  color: string;
-  height?: number;
-  pad?: number;
-}) {
-  const w = 160,
-    h = height,
-    key = mode === "pct" ? "pct" : "m";
-  const vals = points.map((p) => p[key]);
-  const max = Math.max(1, ...vals);
-  const stepX = points.length > 1 ? (w - pad * 2) / (points.length - 1) : 0;
-  const weekendRects = points.map((p, i) =>
-    p.weekend ? (
-      <rect
-        key={`wk-${i}`}
-        x={pad + i * stepX - stepX / 2}
-        y={pad}
-        width={stepX}
-        height={h - pad * 2}
-        fill="#94a3b8"
-        opacity="0.12"
-      />
-    ) : null
-  );
-  const linePts = points
-    .map(
-      (p, i) => `${pad + i * stepX},${pad + (1 - p[key] / max) * (h - pad * 2)}`
-    )
-    .join(" ");
-  const last = points[points.length - 1];
-  const lastVal = last ? last[key] : 0;
-  return (
-    <svg width={w} height={h} style={{ display: "block" }}>
-      <rect
-        x="0"
-        y="0"
-        width={w}
-        height={h}
-        fill="#ffffff"
-        rx="8"
-      />
-      {weekendRects}
-      <polyline fill="none" stroke={color} strokeWidth="2" points={linePts} />
-      {points.length > 0 && (
-        <circle
-          cx={pad + (points.length - 1) * stepX}
-          cy={pad + (1 - lastVal / max) * (h - pad * 2)}
-          r="2.5"
-          fill={color}
-        />
-      )}
-    </svg>
-  );
-}
-function ActivityCardMini({
-  name,
-  series,
-  mode,
-  onFocus,
-  focused,
-}: {
-  name: string;
-  series: TrendSeries;
-  mode: "m" | "pct";
-  onFocus: (name: string) => void;
-  focused: boolean;
-}) {
-  const color = colorForActivity(name);
-  const v = series[name] || [];
-  const last = v[v.length - 1];
-  const metric =
-    mode === "pct" ? `${(last?.pct ?? 0).toFixed(0)}%` : fmtM(last?.m ?? 0);
-  return (
-    <div
-      onClick={() => onFocus(name)}
-      style={{
-        border: `1px solid ${focused ? color : "var(--ac-border)"}`,
-        background: "#ffffff",
-        borderRadius: 12,
-        padding: 10,
-        cursor: "pointer",
-        boxShadow: focused
-          ? "0 6px 14px rgba(0,0,0,0.24)"
-          : "0 4px 10px rgba(0,0,0,0.12)",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          marginBottom: 6,
-        }}
-      >
-        <span
-          style={{ width: 10, height: 10, borderRadius: 2, background: color }}
-        />
-        <div
-          style={{
-            fontWeight: 600,
-            fontSize: 13,
-            flex: 1,
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-          }}
-        >
-          {name}
-        </div>
-        <div style={{ fontSize: 12, color: "var(--ac-muted)" }}>{metric}</div>
-      </div>
-      <Sparkline points={v} mode={mode} color={color} />
-      <div style={{ fontSize: 11, color: "var(--ac-muted)", marginTop: 6 }}>
-        {mode === "pct"
-          ? "Last days (% of day). Shaded = weekend."
-          : "Last days (minutes). Shaded = weekend."}
-      </div>
-    </div>
-  );
-}
 
 /* -------------------- Main -------------------- */
 export default function ActivityClock() {
@@ -976,24 +364,6 @@ export default function ActivityClock() {
       setNames((prev) => [...prev, name].sort((a, b) => a.localeCompare(b)));
   }
 
-  // Helper: split session by Edmonton midnights so each piece lands on the correct day
-  function splitByEdmontonMidnight(startD, endD) {
-    const segs = [];
-    let a = new Date(startD);
-    const end = new Date(endD);
-
-    const mid = (d) => startOfDayEdmonton(new Date(d));
-    const nextMid = (d) => new Date(mid(d).getTime() + 24 * 60 * 60000);
-
-    while (yyyyMmDdEdmonton(a) !== yyyyMmDdEdmonton(end)) {
-      const cut = nextMid(a);
-      segs.push({ start: a, end: cut });
-      a = cut;
-    }
-    segs.push({ start: a, end });
-    return segs;
-  }
-
   // Log from current "start" for either:
   //   - explicitMinutes (backfilling a chunk), OR
   //   - full elapsed (start -> now) when minutes is empty
@@ -1254,11 +624,11 @@ export default function ActivityClock() {
     <div className="habit-tracker">
       <h2 className="page-title">Activity Clock</h2>
 
-      <div className="card">
-        <div className="card-header">
+      <Card>
+        <CardHeader>
           <h3>Now</h3>
-          <span className="chip">{formatEdmonton(now)}</span>
-        </div>
+          <Chip>{formatEdmonton(now)}</Chip>
+        </CardHeader>
 
         <div style={{ display: "grid", gap: 12 }}>
           <div>
@@ -1361,20 +731,20 @@ export default function ActivityClock() {
             </div>
           )}
         </div>
-      </div>
+      </Card>
 
       <div style={{ marginBottom: 16 }}>
         <DonutChart rows={todayBreakdown.rows} />
       </div>
 
       {/* Today vs Usual */}
-      <section className="card summary-card">
-        <div className="card-header">
+      <Card className="summary-card">
+        <CardHeader>
           <h3>Today vs Usual</h3>
-          <span className="chip">
+          <Chip>
             {historical.dayCount} days of history since {START_DATE_ISO}
-          </span>
-        </div>
+          </Chip>
+        </CardHeader>
 
         <div className="summary-grid">
           <div className="stat">
@@ -1411,13 +781,13 @@ export default function ActivityClock() {
               </div>
             ))}
         </div>
-      </section>
+      </Card>
 
       {/* Trends */}
-      <div className="card summary-card">
-        <div className="card-header" style={{ alignItems: "center", gap: 10 }}>
+      <Card className="summary-card">
+        <CardHeader style={{ alignItems: "center", gap: 10 }}>
           <h3>Trends (since {START_DATE_ISO})</h3>
-          <span className="chip">{historical.dayCount} days</span>
+          <Chip>{historical.dayCount} days</Chip>
           <div
             style={{
               marginLeft: "auto",
@@ -1464,7 +834,7 @@ export default function ActivityClock() {
               {mode === "pct" ? "✓ " : ""}% of day
             </button>
           </div>
-        </div>
+        </CardHeader>
 
         <div style={{ fontSize: 12, color: "var(--ac-muted)", marginBottom: 10 }}>
           Top {TOP_N} activities in window; others grouped as <b>Other</b>.
@@ -1518,19 +888,19 @@ export default function ActivityClock() {
             }}
           />
         </div>
-      </div>
+      </Card>
 
       <VacationDaysPanel />
 
       {/* Today’s Breakdown */}
-      <div className="card metrics-card">
-        <div className="card-header">
+      <Card className="metrics-card">
+        <CardHeader>
           <h3>Today’s Breakdown</h3>
-          <span className="chip">
+          <Chip>
             Recorded {fmtM(todayBreakdown.totalTracked)} • Since midnight{" "}
             {fmtM(todayBreakdown.sinceMidnight)}
-          </span>
-        </div>
+          </Chip>
+        </CardHeader>
         <div className="metrics-grid">
           {todayBreakdown.rows.map((row) => (
             <div className="metric" key={row.activity}>
@@ -1542,7 +912,7 @@ export default function ActivityClock() {
             </div>
           ))}
         </div>
-      </div>
+      </Card>
 
       <SessionsPanel
         filteredSessions={filteredSessions}
@@ -1556,7 +926,7 @@ export default function ActivityClock() {
         activitiesToday={activitiesToday}
         totalTodayMins={totalTodayMins}
       />
-      {loading && <div className="chip">Loading…</div>}
+      {loading && <Chip as="div">Loading…</Chip>}
     </div>
   );
 }
