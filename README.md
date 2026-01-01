@@ -10,8 +10,10 @@ TypeScript-first rebuild of the Activity Clock and Habit Tracker with Netlify se
 ## App structure
 - `src/index.tsx` — entry point with global styling.
 - `src/App.tsx` — router and navigation shell.
-- `src/components/ActivityClock.tsx` — time logging, trends, and day analytics.
-- `src/components/HabitTracker.tsx` — daily habits, numeric metrics, and streak insights.
+- `src/components/ActivityClock.tsx` — orchestrates activity logging, trends, and daily analytics.
+- `src/components/activity/*` — Activity Clock sections (logger, summaries, charts, sessions).
+- `src/components/HabitTracker.tsx` — assembles habit tracking UI and computed stats.
+- `src/components/habitTracker/*` — Habit Tracker sections, constants, and hooks.
 - `src/dateUtils.ts` — Edmonton-aware date helpers shared across features.
 - `netlify/functions/*` — API endpoints for habits, activity names/logs, and auth.
 
