@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useEffect, useMemo } from "react";
 // ⬇️ removed computeStreak import (it was using the wrong shape)
 // import { computeStreak } from "../utils/streakUtils";
 import "./HabitTracker.css";
@@ -9,30 +9,18 @@ import {
   useVacationDays,
 } from "../vacationDays";
 import VacationDaysPanel from "./VacationDaysPanel";
-import {
-  HABITS,
-  STUDY_KEYS,
-  START_DATE,
-  EVENT_KEYS,
-} from "./habitTracker/constants";
+import { HABITS, STUDY_KEYS, START_DATE } from "./habitTracker/constants";
 import DailyMetrics from "./habitTracker/DailyMetrics";
 import HabitList from "./habitTracker/HabitList";
 import SummaryPanel from "./habitTracker/SummaryPanel";
 import WeightChartCard from "./habitTracker/WeightChartCard";
 import type {
   HabitAggregate,
-  HabitData,
-  HabitHistoryMap,
   WeightDelta,
   WeightPoint,
 } from "./habitTracker/types";
-import {
-  asNumOrNull,
-  getStudyValFrom,
-  isFiniteNum,
-  minutesSince,
-  safeAvg,
-} from "./habitTracker/utils";
+import { getStudyValFrom, isFiniteNum, minutesSince, safeAvg } from "./habitTracker/utils";
+import { useHabitData, useHabitHistory } from "./habitTracker/hooks";
 
 /**
  * Component: HabitTracker
@@ -52,139 +40,14 @@ const HabitTracker = () => {
   // "today" is the Edmonton day key
   const today = yyyyMmDdEdmonton();
 
-  const [habitData, setHabitData] = useState<HabitData>({});
-  const [history, setHistory] = useState<HabitHistoryMap>({}); // { 'YYYY-MM-DD': {...} }
-  const [loading, setLoading] = useState<boolean>(true);
-  const [historyLoading, setHistoryLoading] = useState<boolean>(true);
   const [vacationDays] = useVacationDays();
+  const { habitData, loading, toggleHabit, updateNumber, updateStudy, getStudyVal } =
+    useHabitData(today);
+  const { history, historyLoading } = useHabitHistory(START_DATE, today);
 
   useEffect(() => {
     document.title = "activity-clock – Habit Tracker";
   }, []);
-
-  // ---------- load today's data ----------
-  useEffect(() => {
-    const run = async () => {
-      try {
-        const res = await fetch(`/.netlify/functions/habits/${today}`);
-        const json = await res.json();
-        const d = json?.data || {};
-        // Coerce possible string weight to number
-        if (typeof d.weight === "string") {
-          const n = Number(d.weight);
-          if (Number.isFinite(n)) d.weight = n;
-        }
-        setHabitData(d);
-      } catch (err) {
-        console.error("Error fetching habits:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    run();
-  }, [today]);
-
-  // ---------- load ALL history since START_DATE ----------
-  useEffect(() => {
-    const run = async () => {
-      setHistoryLoading(true);
-      try {
-        const url = `/.netlify/functions/habits?from=${START_DATE}&to=${today}`;
-        const res = await fetch(url);
-        const json = await res.json();
-
-        const raw = json?.data || json?.items || json || {};
-        let map = {};
-        if (Array.isArray(raw)) {
-          for (const item of raw) {
-            const d = item?.date || item?._id || "";
-            if (typeof d === "string" && d) map[d] = item;
-          }
-        } else if (typeof raw === "object" && raw) {
-          map = raw;
-        }
-        setHistory(map);
-      } catch (err) {
-        console.error("Error fetching history:", err);
-        setHistory({});
-      } finally {
-        setHistoryLoading(false);
-      }
-    };
-    run();
-  }, [today]);
-
-  // ---------- persist (auto-compute waste-related only if provided) ----------
-  const saveHabits = async (updated) => {
-    const lessWasteKey = "Less than 50m waste";
-    const wm = asNumOrNull(updated.wastedMin);
-
-    const computed = { ...updated };
-
-    if (wm !== null) {
-      computed[lessWasteKey] = wm <= 50;
-      computed.wasteDelta = wm - 50; // store per-day delta
-    } else {
-      delete computed[lessWasteKey];
-      delete computed.wasteDelta;
-    }
-
-    setHabitData(computed);
-    try {
-      await fetch(`/.netlify/functions/habits/${today}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ data: computed }),
-      });
-    } catch (err) {
-      console.error("Error saving habits:", err);
-    }
-  };
-
-  // ---------- UI updaters ----------
-  const toggleHabit = (habit) => {
-    if (habit === "Less than 50m waste") return; // computed; read-only
-    const updated = { ...habitData, [habit]: !habitData[habit] };
-    saveHabits(updated);
-  };
-
-  // Only stamp timestamp when the counter INCREASES
-  const updateNumber = (key, value) => {
-    const v = Number(value);
-    const nextVal = Number.isFinite(v) ? Math.max(0, v) : 0;
-
-    const prevRaw = habitData[key];
-    const prev = Number.isFinite(prevRaw) ? prevRaw : 0;
-
-    const updated = { ...habitData, [key]: nextVal };
-
-    if (key in EVENT_KEYS) {
-      if (nextVal > prev) {
-        // increased -> stamp last*Ts
-        updated[EVENT_KEYS[key]] = new Date().toISOString();
-      }
-      // if decreased or equal, do not change the timestamp
-    }
-
-    saveHabits(updated);
-  };
-
-  const updateStudy = (key, value) => {
-    const v = Number(value);
-    const curStudy = habitData.study || {};
-    const study = {
-      ...curStudy,
-      [key]: Number.isFinite(v) ? Math.max(0, v) : 0,
-    };
-    const updated = { ...habitData, study };
-    saveHabits(updated);
-  };
-
-  // ---------- study value helpers (with legacy fallback) ----------
-  const getStudyVal = useCallback(
-    (k) => getStudyValFrom(k, habitData),
-    [habitData]
-  );
 
   // ---------- derived (today) ----------
   const totalStudyMin = useMemo(
@@ -218,7 +81,7 @@ const HabitTracker = () => {
   // ---------- merge history with today (so fresh edits count) ----------
   const filteredHistory = useMemo(
     () => filterOutVacationMap(history),
-    [history]
+    [history, vacationDays]
   );
 
   const mergedHistory = useMemo(

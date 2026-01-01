@@ -3,19 +3,13 @@ import "./HabitTracker.css";
 import "./ActivityClock.css";
 import {
   yyyyMmDdEdmonton,
-  formatEdmonton,
   diffMinutes,
   startOfDayEdmonton,
   minutesSinceEdmontonMidnight,
 } from "../dateUtils";
 import { filterOutVacationLogs, useVacationDays } from "../vacationDays";
 import { fmtM } from "./activity/utils";
-import {
-  ActivityCardMini,
-  Bar,
-  DonutChart,
-  MultiLinePerDay,
-} from "./activity/ActivityCharts";
+import { DonutChart } from "./activity/ActivityCharts";
 import {
   aggregateTopN,
   buildSeries,
@@ -23,10 +17,19 @@ import {
   splitByEdmontonMidnight,
   upsertTodayInHistory,
 } from "./activity/helpers";
-import type { DayLog, LoggedSegments } from "./activity/types";
+import type {
+  DayLog,
+  HistoricalSummary,
+  LoggedSegments,
+  TodayBreakdown,
+} from "./activity/types";
+import ActivityLoggerCard from "./activity/ActivityLoggerCard";
+import TodayVsUsualCard from "./activity/TodayVsUsualCard";
+import TrendsCard from "./activity/TrendsCard";
+import TodayBreakdownCard from "./activity/TodayBreakdownCard";
 import SessionsPanel from "./activity/SessionsPanel";
 import VacationDaysPanel from "./VacationDaysPanel";
-import { Card, CardHeader, Chip } from "./shared/Card";
+import { Chip } from "./shared/Card";
 
 const START_DATE_ISO = "2025-12-01";
 const TOP_N = 7;
@@ -161,7 +164,7 @@ export default function ActivityClock() {
   }, []);
 
   // Today’s breakdown (Edmonton day)
-  const todayBreakdown = useMemo(() => {
+  const todayBreakdown = useMemo<TodayBreakdown>(() => {
     const totals: Record<string, number> = {};
     for (const s of todayLog.sessions) {
       const m = diffMinutes(s.start, s.end);
@@ -194,7 +197,7 @@ export default function ActivityClock() {
   );
 
   // Historical (per day averages)
-  const historical = useMemo(() => {
+  const historical = useMemo<HistoricalSummary>(() => {
     const perDayTotals: Record<
       string,
       { totalMinutes: number; daysWithAny: number }
@@ -603,316 +606,57 @@ export default function ActivityClock() {
     [todayLog.sessions]
   );
 
-  // helper to render delta badge
-  const deltaBadge = (todayVal, avgVal, invert = false) => {
-    if (!avgVal) return null;
-    const pct = ((todayVal - avgVal) / avgVal) * 100;
-    const good = invert ? pct < 0 : pct > 0;
-    const bad = invert ? pct > 0 : pct < 0;
-    return (
-      <span
-        className={`delta-badge ${good ? "good" : bad ? "bad" : ""}`}
-        style={{ marginLeft: 6 }}
-      >
-        {pct > 0 ? "+" : ""}
-        {pct.toFixed(1)}%
-      </span>
-    );
-  };
-
   return (
     <div className="habit-tracker">
       <h2 className="page-title">Activity Clock</h2>
 
-      <Card>
-        <CardHeader>
-          <h3>Now</h3>
-          <Chip>{formatEdmonton(now)}</Chip>
-        </CardHeader>
-
-        <div style={{ display: "grid", gap: 12 }}>
-          <div>
-            <strong>Start:</strong> {formatEdmonton(start)}
-          </div>
-          <div>
-            <strong>Elapsed since start:</strong> {fmtM(elapsedMins)}
-          </div>
-
-          <div className="metric-input with-unit" style={{ gap: 8 }}>
-            <input
-              type="text"
-              placeholder='What did you do? e.g., "Gym", "Sleep"'
-              value={nameInput}
-              onChange={(e) => setNameInput(e.target.value)}
-              style={{
-                flex: 1,
-                padding: "10px 12px",
-                borderRadius: 10,
-                border: "1px solid var(--ac-border)",
-                background: "#ffffff",
-                color: "#0f172a",
-              }}
-            />
-            <input
-              type="number"
-              min="1"
-              placeholder="Minutes (optional)"
-              value={minutesInput}
-              onChange={(e) => setMinutesInput(e.target.value)}
-              style={{
-                width: 130,
-                padding: "10px 12px",
-                borderRadius: 10,
-                border: "1px solid var(--ac-border)",
-                background: "#ffffff",
-                color: "#0f172a",
-              }}
-            />
-            <button
-              onClick={() =>
-                logSinceLastStop(
-                  undefined,
-                  minutesInput ? Number(minutesInput) : undefined
-                )
-              }
-              className="chip"
-              style={{ cursor: "pointer" }}
-            >
-              Log segment
-            </button>
-            <button
-              onClick={undoLast}
-              className="chip"
-              disabled={!lastLogged}
-              style={{
-                cursor: lastLogged ? "pointer" : "not-allowed",
-                opacity: lastLogged ? 1 : 0.5,
-              }}
-            >
-              Undo last
-            </button>
-          </div>
-          <div style={{ fontSize: 12, color: "var(--ac-muted)" }}>
-            Leave minutes empty to log from <b>Start → now</b>. Set minutes to
-            log just that many minutes <b>from Start</b> (e.g. 50m work, then
-            10m break). <b>Undo last</b> removes the last logged chunk from the
-            DB and restores the previous Start.
-          </div>
-
-          {names.length > 0 && (
-            <div>
-              <div
-                style={{ fontSize: 12, color: "var(--ac-muted)", marginBottom: 6 }}
-              >
-                Quick pick
-              </div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {names.map((n) => (
-                  <button
-                    key={n}
-                    className="chip"
-                    style={{ cursor: "pointer" }}
-                    onClick={() =>
-                      logSinceLastStop(
-                        n,
-                        minutesInput ? Number(minutesInput) : undefined
-                      )
-                    }
-                    title={
-                      minutesInput
-                        ? `Log ${minutesInput}m of "${n}" from Start`
-                        : `Log "${n}" from Start to now`
-                    }
-                  >
-                    {n}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </Card>
+      <ActivityLoggerCard
+        now={now}
+        start={start}
+        elapsedMins={elapsedMins}
+        nameInput={nameInput}
+        minutesInput={minutesInput}
+        names={names}
+        onNameChange={setNameInput}
+        onMinutesChange={setMinutesInput}
+        onLog={logSinceLastStop}
+        onUndo={undoLast}
+        canUndo={Boolean(lastLogged)}
+      />
 
       <div style={{ marginBottom: 16 }}>
         <DonutChart rows={todayBreakdown.rows} />
       </div>
 
-      {/* Today vs Usual */}
-      <Card className="summary-card">
-        <CardHeader>
-          <h3>Today vs Usual</h3>
-          <Chip>
-            {historical.dayCount} days of history since {START_DATE_ISO}
-          </Chip>
-        </CardHeader>
-
-        <div className="summary-grid">
-          <div className="stat">
-            <div className="stat-label">Total tracked today</div>
-            <div className="stat-value">
-              {fmtM(todayBreakdown.totalTracked)}
-              {historical.avgTrackedPerDay > 0 &&
-                deltaBadge(
-                  todayBreakdown.totalTracked,
-                  historical.avgTrackedPerDay
-                )}
-            </div>
-            <div className="stat-sub">
-              Usual: {fmtM(historical.avgTrackedPerDay)} / day
-            </div>
-          </div>
-
-          <div className="divider" />
-
-          {historical.deltas
-            .filter((d) => d.activity !== "Untracked")
-            .slice(0, 6)
-            .map((d) => (
-              <div key={d.activity} className="stat">
-                <div className="stat-label">{d.activity}</div>
-                <div className="stat-value">
-                  {fmtM(d.todayM)}
-                  {d.avgM > 0 && deltaBadge(d.todayM, d.avgM)}
-                </div>
-                <div className="stat-sub">
-                  Usual: {fmtM(d.avgM)} • Δ{" "}
-                  {d.avgM ? `${d.delta >= 0 ? "+" : ""}${fmtM(d.delta)}` : "—"}
-                </div>
-              </div>
-            ))}
-        </div>
-      </Card>
+      <TodayVsUsualCard
+        todayBreakdown={todayBreakdown}
+        historical={historical}
+        startDateIso={START_DATE_ISO}
+      />
 
       {/* Trends */}
-      <Card className="summary-card">
-        <CardHeader style={{ alignItems: "center", gap: 10 }}>
-          <h3>Trends (since {START_DATE_ISO})</h3>
-          <Chip>{historical.dayCount} days</Chip>
-          <div
-            style={{
-              marginLeft: "auto",
-              display: "flex",
-              gap: 6,
-              flexWrap: "wrap",
-            }}
-          >
-            {(["All", "Weekdays", "Weekends"] as const).map((k) => (
-              <button
-                key={k}
-                className={`ac-toggle ${trendScope === k ? "is-active" : ""}`}
-                onClick={() => setTrendScope(k)}
-                title={`Show ${k.toLowerCase()}`}
-              >
-                {trendScope === k ? "✓ " : ""}
-                {k}
-              </button>
-            ))}
-            {[7, 14, 30, 60].map((n) => (
-              <button
-                key={n}
-                className={`ac-toggle ${trendDays === n ? "is-active" : ""}`}
-                onClick={() => setTrendDays(n)}
-                title={`Last ${n} days`}
-              >
-                {trendDays === n ? "✓ " : ""}
-                {n}d
-              </button>
-            ))}
-            <button
-              className={`ac-toggle ${mode === "m" ? "is-active" : ""}`}
-              onClick={() => setMode("m")}
-              title="Show absolute minutes"
-            >
-              {mode === "m" ? "✓ " : ""}
-              Minutes
-            </button>
-            <button
-              className={`ac-toggle ${mode === "pct" ? "is-active" : ""}`}
-              onClick={() => setMode("pct")}
-              title="Show share of day"
-            >
-              {mode === "pct" ? "✓ " : ""}% of day
-            </button>
-          </div>
-        </CardHeader>
-
-        <div style={{ fontSize: 12, color: "var(--ac-muted)", marginBottom: 10 }}>
-          Top {TOP_N} activities in window; others grouped as <b>Other</b>.
-        </div>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-            gap: 12,
-          }}
-        >
-          {chosenActivities.map((a) => (
-            <div
-              key={a}
-              style={{
-                opacity: focus && focus !== a ? 0.35 : 1,
-                transition: "opacity .2s",
-              }}
-            >
-              <ActivityCardMini
-                name={a}
-                series={series.byActivity}
-                mode={mode}
-                onFocus={(x) => setFocus(focus === x ? "" : x)}
-                focused={focus === a}
-              />
-            </div>
-          ))}
-        </div>
-
-        <div style={{ marginTop: 20 }}>
-          <div style={{ fontWeight: 700, marginBottom: 8 }}>
-            {mode === "pct"
-              ? "% of day per activity (lines)"
-              : "Minutes per day (lines)"}
-          </div>
-          <MultiLinePerDay
-            days={filteredTrendDays}
-            seriesByActivity={series.byActivity}
-            selectable={chosenActivities}
-            selectedSet={selectedLines}
-            mode={mode}
-            onToggle={(name) => {
-              setSelectedLines((prev) => {
-                const next = new Set(prev);
-                if (next.has(name)) next.delete(name);
-                else next.add(name);
-                if (next.size === 0) next.add(name); // keep at least one visible
-                return next;
-              });
-            }}
-          />
-        </div>
-      </Card>
+      <TrendsCard
+        startDateIso={START_DATE_ISO}
+        dayCount={historical.dayCount}
+        topN={TOP_N}
+        trendScope={trendScope}
+        setTrendScope={setTrendScope}
+        trendDays={trendDays}
+        setTrendDays={setTrendDays}
+        mode={mode}
+        setMode={setMode}
+        chosenActivities={chosenActivities}
+        series={series}
+        filteredTrendDays={filteredTrendDays}
+        selectedLines={selectedLines}
+        setSelectedLines={setSelectedLines}
+        focus={focus}
+        setFocus={setFocus}
+      />
 
       <VacationDaysPanel />
 
-      {/* Today’s Breakdown */}
-      <Card className="metrics-card">
-        <CardHeader>
-          <h3>Today’s Breakdown</h3>
-          <Chip>
-            Recorded {fmtM(todayBreakdown.totalTracked)} • Since midnight{" "}
-            {fmtM(todayBreakdown.sinceMidnight)}
-          </Chip>
-        </CardHeader>
-        <div className="metrics-grid">
-          {todayBreakdown.rows.map((row) => (
-            <div className="metric" key={row.activity}>
-              <label>{row.activity}</label>
-              <Bar pct={row.pct} />
-              <span className="hint">
-                {fmtM(row.minutes)} • {row.pct.toFixed(1)}%
-              </span>
-            </div>
-          ))}
-        </div>
-      </Card>
+      <TodayBreakdownCard todayBreakdown={todayBreakdown} />
 
       <SessionsPanel
         filteredSessions={filteredSessions}
