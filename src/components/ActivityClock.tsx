@@ -11,6 +11,11 @@ import { filterOutVacationLogs, useVacationDays } from "../vacationDays";
 import { fmtM } from "./activity/utils";
 import { DonutChart } from "./activity/ActivityCharts";
 import {
+  ACTIVITY_LOGS_ENDPOINT,
+  ACTIVITY_NAMES_ENDPOINT,
+  CONTENT_TYPE_JSON,
+} from "../constants/api";
+import {
   aggregateTopN,
   buildSeries,
   isWeekend,
@@ -92,7 +97,7 @@ export default function ActivityClock() {
 
         // names
         {
-          const r = await fetch("/api/activityNames");
+          const r = await fetch(ACTIVITY_NAMES_ENDPOINT);
           const t = await r.text();
           let data = [];
           try {
@@ -104,7 +109,7 @@ export default function ActivityClock() {
         // today
         let loadedToday = { date: today, sessions: [] };
         {
-          const r = await fetch(`/api/activityLogs?date=${today}`);
+          const r = await fetch(`${ACTIVITY_LOGS_ENDPOINT}?date=${today}`);
           const t = await r.text();
           try {
             const d = t ? JSON.parse(t) : null;
@@ -146,7 +151,7 @@ export default function ActivityClock() {
           d.setDate(d.getDate() + 1)
         ) {
           const dayKey = yyyyMmDdEdmonton(d);
-          const r = await fetch(`/api/activityLogs?date=${dayKey}`);
+          const r = await fetch(`${ACTIVITY_LOGS_ENDPOINT}?date=${dayKey}`);
           const txt = await r.text();
           let data = null;
           try {
@@ -358,9 +363,9 @@ export default function ActivityClock() {
   // Persist a new activity name
   async function ensureNamePersisted(name) {
     if (!name || names.includes(name)) return;
-    const r = await fetch("/api/activityNames", {
+    const r = await fetch(ACTIVITY_NAMES_ENDPOINT, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": CONTENT_TYPE_JSON },
       body: JSON.stringify({ name }),
     });
     if (r.ok)
@@ -409,9 +414,9 @@ export default function ActivityClock() {
     // Save each segment to backend
     for (const seg of segments) {
       const dateStr = yyyyMmDdEdmonton(seg.start);
-      const res = await fetch(`/api/activityLogs?date=${dateStr}`, {
+      const res = await fetch(`${ACTIVITY_LOGS_ENDPOINT}?date=${dateStr}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": CONTENT_TYPE_JSON },
         body: JSON.stringify({
           session: { start: seg.start, end: seg.end, activity: clean },
         }),
@@ -463,9 +468,9 @@ export default function ActivityClock() {
       // 1) Tell backend to remove those sessions
       for (const seg of segments) {
         const dateStr = yyyyMmDdEdmonton(new Date(seg.start));
-        await fetch(`/api/activityLogs?date=${dateStr}`, {
+        await fetch(`${ACTIVITY_LOGS_ENDPOINT}?date=${dateStr}`, {
           method: "DELETE",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": CONTENT_TYPE_JSON },
           body: JSON.stringify({
             session: {
               start: seg.start,
@@ -479,7 +484,7 @@ export default function ActivityClock() {
       // 2) Reload today's doc from server so frontend matches DB
       const today = yyyyMmDdEdmonton();
       try {
-        const r = await fetch(`/api/activityLogs?date=${today}`);
+        const r = await fetch(`${ACTIVITY_LOGS_ENDPOINT}?date=${today}`);
         const t = await r.text();
         let d = null;
         try {

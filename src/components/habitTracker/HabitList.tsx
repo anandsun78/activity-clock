@@ -1,5 +1,6 @@
 import React from "react";
 import type { HabitData, HabitHistoryMap } from "./types";
+import { LESS_WASTE_HABIT_LABEL } from "./constants";
 import { getHabitStreak } from "./utils";
 
 type HabitListProps = {
@@ -20,7 +21,7 @@ const HabitList: React.FC<HabitListProps> = ({
       {habits.map((habit) => {
         const done = habitData[habit] || false;
         const streak = getHabitStreak(habit, mergedHistory);
-        const isComputed = habit === "Less than 50m waste";
+        const isComputed = habit === LESS_WASTE_HABIT_LABEL;
         return (
           <li key={habit} className={`habit-card ${done ? "done" : ""}`}>
             <label className="habit-label">

@@ -1,5 +1,9 @@
 import type { Handler } from "@netlify/functions";
 import { dbConnect, json, devErrorPayload, mongoose } from "./_db";
+import {
+  INVALID_JSON_BODY_ERROR,
+  METHOD_NOT_ALLOWED_ERROR,
+} from "./constants";
 
 export const handler: Handler = async (event) => {
   try {
@@ -28,7 +32,7 @@ export const handler: Handler = async (event) => {
       try {
         parsed = event.body ? JSON.parse(event.body) : {};
       } catch {
-        return json(400, { error: "Invalid JSON body" });
+        return json(400, { error: INVALID_JSON_BODY_ERROR });
       }
 
       const raw = (parsed.name || "").trim();
@@ -43,7 +47,7 @@ export const handler: Handler = async (event) => {
       return json(200, { ok: true });
     }
 
-    return json(405, { error: "Method Not Allowed" });
+    return json(405, { error: METHOD_NOT_ALLOWED_ERROR });
   } catch (err) {
     console.error("activityNames error:", err);
     return json(500, devErrorPayload(err));

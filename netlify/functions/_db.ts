@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { CONTENT_TYPE_JSON, SERVER_ERROR_MESSAGE } from "./constants";
 
 mongoose.set("strictQuery", true);
 mongoose.set("bufferCommands", false);
@@ -49,7 +50,7 @@ export async function dbConnect() {
 export function json(status: number, obj: unknown) {
   return {
     statusCode: status,
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": CONTENT_TYPE_JSON },
     body: JSON.stringify(obj ?? null),
   };
 }
@@ -60,7 +61,7 @@ export function devErrorPayload(err: unknown) {
     process.env.NODE_ENV !== "production" ||
     process.env.NETLIFY_DEV === "true" ||
     process.env.NETLIFY_LOCAL === "true";
-  const base = { error: error?.message || "Server error" };
+  const base = { error: error?.message || SERVER_ERROR_MESSAGE };
   return isDev ? { ...base, code: error?.code, stack: error?.stack } : base;
 }
 

@@ -1,3 +1,6 @@
+export const WASTE_LIMIT_MINUTES = 50;
+export const LESS_WASTE_HABIT_LABEL = `Less than ${WASTE_LIMIT_MINUTES}m waste`;
+
 export const HABITS = [
   "Daily Book",
   "Weight Check",
@@ -12,7 +15,7 @@ export const HABITS = [
   "Typing",
   "Proj",
   "Comm",
-  "Less than 50m waste",
+  LESS_WASTE_HABIT_LABEL,
   "No news for the day",
   "No external music for the day",
 ];

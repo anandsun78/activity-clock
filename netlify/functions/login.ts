@@ -1,5 +1,9 @@
 import type { Handler } from "@netlify/functions";
 import crypto from "crypto";
+import {
+  CONTENT_TYPE_JSON,
+  METHOD_NOT_ALLOWED_ERROR,
+} from "./constants";
 
 const PASSWORD = process.env.APP_PASSWORD || "";
 const SESSION_SECRET = process.env.APP_SESSION_SECRET || "";
@@ -17,7 +21,7 @@ function createToken() {
 
 export const handler: Handler = async (event) => {
   if (event.httpMethod !== "POST") {
-    return { statusCode: 405, body: "Method Not Allowed" };
+    return { statusCode: 405, body: METHOD_NOT_ALLOWED_ERROR };
   }
 
   // 🚨 if env vars missing, return 500 (don’t crash)
@@ -27,7 +31,7 @@ export const handler: Handler = async (event) => {
     );
     return {
       statusCode: 500,
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": CONTENT_TYPE_JSON },
       body: JSON.stringify({
         ok: false,
         error:
@@ -48,7 +52,7 @@ export const handler: Handler = async (event) => {
   if (password !== PASSWORD) {
     return {
       statusCode: 401,
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": CONTENT_TYPE_JSON },
       body: JSON.stringify({ ok: false, error: "Invalid password" }),
     };
   }
@@ -58,7 +62,7 @@ export const handler: Handler = async (event) => {
   return {
     statusCode: 200,
     headers: {
-      "Content-Type": "application/json",
+      "Content-Type": CONTENT_TYPE_JSON,
       "Set-Cookie": `${COOKIE_NAME}=${token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${
         DAYS * 24 * 60 * 60
       }`,

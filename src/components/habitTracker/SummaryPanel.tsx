@@ -1,6 +1,7 @@
 import React from "react";
 import type { HabitAggregate, WeightDelta } from "./types";
 import { Card, CardHeader, Chip } from "../shared/Card";
+import { WASTE_LIMIT_MINUTES } from "./constants";
 
 type SummaryPanelProps = {
   aggregate: HabitAggregate;
@@ -56,7 +57,7 @@ const SummaryPanel: React.FC<SummaryPanelProps> = ({
               : aggregate.totalWasteDelta}
           </div>
           <div className="stat-sub">
-            Sum of (wasted − 50) on days with input
+            Sum of (wasted − {WASTE_LIMIT_MINUTES}) on days with input
           </div>
         </div>
 

@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import { EVENT_KEYS } from "./constants";
+import {
+  EVENT_KEYS,
+  LESS_WASTE_HABIT_LABEL,
+  WASTE_LIMIT_MINUTES,
+} from "./constants";
+import { CONTENT_TYPE_JSON, HABITS_ENDPOINT } from "../../constants/api";
 import type { HabitData, HabitHistoryMap } from "./types";
 import { asNumOrNull, getStudyValFrom } from "./utils";
 
@@ -10,7 +15,7 @@ export function useHabitData(today: string) {
   useEffect(() => {
     const run = async () => {
       try {
-        const res = await fetch(`/.netlify/functions/habits/${today}`);
+        const res = await fetch(`${HABITS_ENDPOINT}/${today}`);
         const json = await res.json();
         const d = json?.data || {};
         if (typeof d.weight === "string") {
@@ -29,14 +34,14 @@ export function useHabitData(today: string) {
 
   const saveHabits = useCallback(
     async (updated: HabitData) => {
-      const lessWasteKey = "Less than 50m waste";
+      const lessWasteKey = LESS_WASTE_HABIT_LABEL;
       const wm = asNumOrNull(updated.wastedMin);
 
       const computed = { ...updated };
 
       if (wm !== null) {
-        computed[lessWasteKey] = wm <= 50;
-        computed.wasteDelta = wm - 50;
+        computed[lessWasteKey] = wm <= WASTE_LIMIT_MINUTES;
+        computed.wasteDelta = wm - WASTE_LIMIT_MINUTES;
       } else {
         delete computed[lessWasteKey];
         delete computed.wasteDelta;
@@ -44,9 +49,9 @@ export function useHabitData(today: string) {
 
       setHabitData(computed);
       try {
-        await fetch(`/.netlify/functions/habits/${today}`, {
+        await fetch(`${HABITS_ENDPOINT}/${today}`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": CONTENT_TYPE_JSON },
           body: JSON.stringify({ data: computed }),
         });
       } catch (err) {
@@ -58,7 +63,7 @@ export function useHabitData(today: string) {
 
   const toggleHabit = useCallback(
     (habit: string) => {
-      if (habit === "Less than 50m waste") return;
+      if (habit === LESS_WASTE_HABIT_LABEL) return;
       const updated = { ...habitData, [habit]: !habitData[habit] };
       saveHabits(updated);
     },
@@ -123,7 +128,7 @@ export function useHabitHistory(startDate: string, today: string) {
     const run = async () => {
       setHistoryLoading(true);
       try {
-        const url = `/.netlify/functions/habits?from=${startDate}&to=${today}`;
+        const url = `${HABITS_ENDPOINT}?from=${startDate}&to=${today}`;
         const res = await fetch(url);
         const json = await res.json();
 

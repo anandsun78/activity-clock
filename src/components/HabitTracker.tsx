@@ -9,7 +9,13 @@ import {
   useVacationDays,
 } from "../vacationDays";
 import VacationDaysPanel from "./VacationDaysPanel";
-import { HABITS, STUDY_KEYS, START_DATE } from "./habitTracker/constants";
+import {
+  HABITS,
+  STUDY_KEYS,
+  START_DATE,
+  LESS_WASTE_HABIT_LABEL,
+  WASTE_LIMIT_MINUTES,
+} from "./habitTracker/constants";
 import DailyMetrics from "./habitTracker/DailyMetrics";
 import HabitList from "./habitTracker/HabitList";
 import SummaryPanel from "./habitTracker/SummaryPanel";
@@ -25,8 +31,8 @@ import { useHabitData, useHabitHistory } from "./habitTracker/hooks";
 /**
  * Component: HabitTracker
  * - Tracks daily habits + numeric metrics (weight, wastedMin, study minutes by BK/SD/AP)
- * - Auto-computes "Less than 50m waste" when wastedMin is provided
- * - Persists per-day wasteDelta = wastedMin - 50 (only when wastedMin is set)
+ * - Auto-computes the waste-limit habit when wastedMin is provided
+ * - Persists per-day wasteDelta = wastedMin - WASTE_LIMIT_MINUTES (only when wastedMin is set)
  * - Adds 3 counters: newsAccessCount, musicListenCount, jlCount
  * - Shows per-day averages for those counters across observed days
  * - Shows per-day averages for BK/SD/AP/Waste and total study (BK+SD+AP)
@@ -57,8 +63,9 @@ const HabitTracker = () => {
 
   const hasWastedToday = isFiniteNum(habitData.wastedMin);
   const wastedMin = hasWastedToday ? habitData.wastedMin : 0;
-  const wasteDelta = hasWastedToday ? wastedMin - 50 : 0;
-  const overWasteLimit = hasWastedToday && wastedMin > 50;
+  const wasteDelta = hasWastedToday ? wastedMin - WASTE_LIMIT_MINUTES : 0;
+  const overWasteLimit =
+    hasWastedToday && wastedMin > WASTE_LIMIT_MINUTES;
 
   // minutes since each new counter and since ANY of them
   const minsSinceNews = minutesSince(habitData.lastNewsTs);
@@ -144,7 +151,9 @@ const HabitTracker = () => {
       const hasWastedMin = isFiniteNum(day.wastedMin);
       if (hasWasteDelta || hasWastedMin) {
         if (hasWastedMin) sums.totalWaste += day.wastedMin;
-        const dDelta = hasWasteDelta ? day.wasteDelta : day.wastedMin - 50;
+        const dDelta = hasWasteDelta
+          ? day.wasteDelta
+          : day.wastedMin - WASTE_LIMIT_MINUTES;
         sums.totalWasteDelta += dDelta;
       }
 
@@ -163,7 +172,7 @@ const HabitTracker = () => {
         dayStudy > 0 ||
         hasWastedMin ||
         hasWeight ||
-        typeof day["Less than 50m waste"] !== "undefined" ||
+        typeof day[LESS_WASTE_HABIT_LABEL] !== "undefined" ||
         isFiniteNum(day.newsAccessCount) ||
         isFiniteNum(day.musicListenCount) ||
         isFiniteNum(day.jlCount)

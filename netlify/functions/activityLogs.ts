@@ -1,5 +1,11 @@
 import type { Handler } from "@netlify/functions";
 import { dbConnect, json, devErrorPayload, mongoose } from "./_db";
+import {
+  DATE_FORMAT,
+  DATE_REGEX,
+  INVALID_JSON_BODY_ERROR,
+  METHOD_NOT_ALLOWED_ERROR,
+} from "./constants";
 
 export const handler: Handler = async (event) => {
   try {
@@ -22,9 +28,9 @@ export const handler: Handler = async (event) => {
 
     const { httpMethod, queryStringParameters, body } = event;
     const date = queryStringParameters?.date;
-    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    if (!date || !DATE_REGEX.test(date)) {
       return json(400, {
-        error: "Missing or invalid date. Use ?date=YYYY-MM-DD",
+        error: `Missing or invalid date. Use ?date=${DATE_FORMAT}`,
       });
     }
 
@@ -40,7 +46,7 @@ export const handler: Handler = async (event) => {
       try {
         parsed = body ? JSON.parse(body) : {};
       } catch {
-        return json(400, { error: "Invalid JSON body" });
+        return json(400, { error: INVALID_JSON_BODY_ERROR });
       }
 
       const s = parsed.session || {};
@@ -67,7 +73,7 @@ export const handler: Handler = async (event) => {
       try {
         parsed = body ? JSON.parse(body) : {};
       } catch {
-        return json(400, { error: "Invalid JSON body" });
+        return json(400, { error: INVALID_JSON_BODY_ERROR });
       }
 
       // allow either { session: { ... } } or { start, end, activity }
@@ -103,7 +109,7 @@ export const handler: Handler = async (event) => {
     }
 
     // ---------- Fallback ----------
-    return json(405, { error: "Method Not Allowed" });
+    return json(405, { error: METHOD_NOT_ALLOWED_ERROR });
   } catch (err) {
     console.error("activityLogs error:", err);
     return json(500, devErrorPayload(err));

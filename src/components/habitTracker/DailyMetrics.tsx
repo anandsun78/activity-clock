@@ -1,5 +1,6 @@
 import React from "react";
 import type { HabitData } from "./types";
+import { WASTE_LIMIT_MINUTES } from "./constants";
 import { isFiniteNum } from "./utils";
 import { Card, CardHeader, Chip } from "../shared/Card";
 
@@ -69,7 +70,9 @@ const DailyMetrics: React.FC<DailyMetricsProps> = ({
             onChange={(e) => updateNumber("wastedMin", e.target.value)}
           />
           <small className="hint">
-            {overWasteLimit ? "Over 50m limit" : "≤ 50m target"}
+            {overWasteLimit
+              ? `Over ${WASTE_LIMIT_MINUTES}m limit`
+              : `≤ ${WASTE_LIMIT_MINUTES}m target`}
           </small>
         </div>
 

@@ -6,9 +6,17 @@
 
 import type { Handler } from "@netlify/functions";
 import { dbConnect, json, mongoose } from "./_db";
+import {
+  DATE_FORMAT,
+  DATE_REGEX,
+  HABITS_ROUTE_SEGMENT,
+  INVALID_JSON_BODY_ERROR,
+  METHOD_NOT_ALLOWED_ERROR,
+  SERVER_ERROR_MESSAGE,
+} from "./constants";
 
 function isYmd(s?: string | null) {
-  return typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s);
+  return typeof s === "string" && DATE_REGEX.test(s);
 }
 
 const HabitSchema = new mongoose.Schema(
@@ -30,7 +38,7 @@ export const handler: Handler = async (event) => {
     // Support both /habits/:date and /habits?from=&to=
     const parts = path.split("/");
     const last = parts[parts.length - 1];
-    const hasDateInPath = last && last !== "habits";
+    const hasDateInPath = last && last !== HABITS_ROUTE_SEGMENT;
 
     // -------- Range GET --------
     if (httpMethod === "GET" && !hasDateInPath) {
@@ -38,7 +46,7 @@ export const handler: Handler = async (event) => {
       const to = queryStringParameters?.to;
       if (!isYmd(from) || !isYmd(to) || from > to) {
         return json(400, {
-          error: "Use ?from=YYYY-MM-DD&to=YYYY-MM-DD with from<=to",
+          error: `Use ?from=${DATE_FORMAT}&to=${DATE_FORMAT} with from<=to`,
         });
       }
 
@@ -58,11 +66,11 @@ export const handler: Handler = async (event) => {
     const date = hasDateInPath ? last : null;
     if (!date) {
       return json(400, {
-        error: "Missing date. Use /habits/:date or ?from=&to=",
+        error: `Missing date. Use /${HABITS_ROUTE_SEGMENT}/:date or ?from=&to=`,
       });
     }
     if (!isYmd(date)) {
-      return json(400, { error: "Invalid date. Use YYYY-MM-DD" });
+      return json(400, { error: `Invalid date. Use ${DATE_FORMAT}` });
     }
 
     // -------- GET one day --------
@@ -77,7 +85,7 @@ export const handler: Handler = async (event) => {
       try {
         parsed = body ? JSON.parse(body) : {};
       } catch {
-        return json(400, { error: "Invalid JSON body" });
+        return json(400, { error: INVALID_JSON_BODY_ERROR });
       }
       if (typeof parsed.data !== "object" || parsed.data === null) {
         return json(400, { error: "Body must be { data: { ... } }" });
@@ -92,10 +100,10 @@ export const handler: Handler = async (event) => {
       return json(200, { ok: true, data: updated.data || {} });
     }
 
-    return json(405, { error: "Method Not Allowed" });
+    return json(405, { error: METHOD_NOT_ALLOWED_ERROR });
   } catch (err) {
     console.error("habits function error:", err);
-    const msg = err?.message || "Server error";
+    const msg = err?.message || SERVER_ERROR_MESSAGE;
     return json(500, { error: msg });
   }
 };

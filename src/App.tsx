@@ -1,11 +1,7 @@
 import { BrowserRouter, Navigate, NavLink, Route, Routes } from "react-router-dom";
 import ActivityClock from "./components/ActivityClock";
 import HabitTracker from "./components/HabitTracker";
-
-const navItems = [
-  { label: "Activity Clock", to: "/" },
-  { label: "Habit Tracker", to: "/habits" },
-];
+import { NAV_ITEMS, ROUTES } from "./constants/routes";
 
 function NavBar() {
   return (
@@ -36,7 +32,7 @@ function NavBar() {
           activity-clock
         </div>
         <nav style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          {navItems.map((item) => (
+          {NAV_ITEMS.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
@@ -67,9 +63,9 @@ function AppShell() {
       <NavBar />
       <main className="page">
         <Routes>
-          <Route path="/" element={<ActivityClock />} />
-          <Route path="/habits" element={<HabitTracker />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path={ROUTES.home} element={<ActivityClock />} />
+          <Route path={ROUTES.habits} element={<HabitTracker />} />
+          <Route path="*" element={<Navigate to={ROUTES.home} replace />} />
         </Routes>
       </main>
     </div>
