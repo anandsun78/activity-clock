@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
-// Dates where streaks/analytics should be paused (YYYY-MM-DD in Edmonton time).
+// Dates where streaks/analytics should be paused (YYYY-MM-DD in local time).
 const VACATION_STORAGE_KEY = "activity_clock_vacation_days";
 const VACATION_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const VACATION_LISTENERS = new Set<(days: string[]) => void>();

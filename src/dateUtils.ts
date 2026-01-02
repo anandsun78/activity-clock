@@ -1,7 +1,14 @@
 // src/dateUtils.js
 export type DateLike = string | number | Date;
 
-export const EDMONTON_TZ = "America/Edmonton";
+let cachedUserTimeZone: string | null = null;
+
+export function getUserTimeZone() {
+  if (cachedUserTimeZone) return cachedUserTimeZone;
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  cachedUserTimeZone = tz || "UTC";
+  return cachedUserTimeZone;
+}
 
 type DateParts = { type: string; value: string };
 
@@ -11,12 +18,12 @@ function partsToObj(parts: DateParts[]): Record<string, string> {
   return o;
 }
 
-/** Return {hour, minute, second} for Edmonton at given instant. */
-function edmontonHMS(d: DateLike = new Date()) {
+/** Return {hour, minute, second} in the user’s local time zone. */
+function localHMS(d: DateLike = new Date()) {
   const date = new Date(d);
   const parts = partsToObj(
     new Intl.DateTimeFormat("en-CA", {
-      timeZone: EDMONTON_TZ,
+      timeZone: getUserTimeZone(),
       hour12: false,
       hour: "2-digit",
       minute: "2-digit",
@@ -30,25 +37,25 @@ function edmontonHMS(d: DateLike = new Date()) {
   };
 }
 
-/** Minutes since Edmonton local midnight at instant d. Always 0–1440. */
-export function minutesSinceEdmontonMidnight(d: DateLike = new Date()) {
-  const { hour, minute, second } = edmontonHMS(d);
+/** Minutes since local midnight at instant d. Always 0–1440. */
+export function minutesSinceLocalMidnight(d: DateLike = new Date()) {
+  const { hour, minute, second } = localHMS(d);
   return hour * 60 + minute + second / 60;
 }
 
-/** Exact UTC instant of Edmonton local midnight for the day containing d. */
-export function startOfDayEdmonton(d: DateLike = new Date()) {
+/** Exact UTC instant of local midnight for the day containing d. */
+export function startOfDayLocal(d: DateLike = new Date()) {
   const date = new Date(d);
-  const msSince = minutesSinceEdmontonMidnight(date) * 60000;
+  const msSince = minutesSinceLocalMidnight(date) * 60000;
   return new Date(date.getTime() - msSince);
 }
 
-/** YYYY-MM-DD for the Edmonton local calendar day of instant d. */
-export function yyyyMmDdEdmonton(d: DateLike = new Date()) {
+/** YYYY-MM-DD for the local calendar day of instant d. */
+export function yyyyMmDdLocal(d: DateLike = new Date()) {
   const date = new Date(d);
   const parts = partsToObj(
     new Intl.DateTimeFormat("en-CA", {
-      timeZone: EDMONTON_TZ,
+      timeZone: getUserTimeZone(),
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
@@ -57,19 +64,19 @@ export function yyyyMmDdEdmonton(d: DateLike = new Date()) {
   return `${parts.year}-${parts.month}-${parts.day}`;
 }
 
-/** Human-readable datetime in Edmonton. */
-export function formatEdmonton(dateLike: DateLike) {
+/** Human-readable datetime in the local time zone. */
+export function formatLocalDateTime(dateLike: DateLike) {
   return new Intl.DateTimeFormat("en-CA", {
-    timeZone: EDMONTON_TZ,
+    timeZone: getUserTimeZone(),
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(dateLike));
 }
 
-/** Time-only in Edmonton (HH:MM:SS). */
-export function formatEdmontonTime(dateLike: DateLike) {
+/** Time-only in the local time zone (HH:MM:SS). */
+export function formatLocalTime(dateLike: DateLike) {
   return new Intl.DateTimeFormat("en-CA", {
-    timeZone: EDMONTON_TZ,
+    timeZone: getUserTimeZone(),
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",

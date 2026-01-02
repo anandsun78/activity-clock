@@ -1,4 +1,4 @@
-import { startOfDayEdmonton, yyyyMmDdEdmonton } from "../../dateUtils";
+import { startOfDayLocal, yyyyMmDdLocal } from "../../dateUtils";
 import type { DayLog, TrendDay, TrendSeries } from "./types";
 
 const TOP_N_DEFAULT = 7;
@@ -55,15 +55,15 @@ export function upsertTodayInHistory(prevHistory: DayLog[], newDayDoc: DayLog) {
   return copy;
 }
 
-export function splitByEdmontonMidnight(startD: Date, endD: Date) {
+export function splitByLocalMidnight(startD: Date, endD: Date) {
   const segs = [] as { start: Date; end: Date }[];
   let a = new Date(startD);
   const end = new Date(endD);
 
-  const mid = (d: Date) => startOfDayEdmonton(new Date(d));
+  const mid = (d: Date) => startOfDayLocal(new Date(d));
   const nextMid = (d: Date) => new Date(mid(d).getTime() + 24 * 60 * 60000);
 
-  while (yyyyMmDdEdmonton(a) !== yyyyMmDdEdmonton(end)) {
+  while (yyyyMmDdLocal(a) !== yyyyMmDdLocal(end)) {
     const cut = nextMid(a);
     segs.push({ start: a, end: cut });
     a = cut;

@@ -1,5 +1,5 @@
 import React from "react";
-import { formatEdmonton } from "../../dateUtils";
+import { formatLocalDateTime } from "../../dateUtils";
 import { fmtM } from "./utils";
 import { Card, CardHeader, Chip } from "../shared/Card";
 
@@ -36,12 +36,12 @@ export default function ActivityLoggerCard({
     <Card>
       <CardHeader>
         <h3>Now</h3>
-        <Chip>{formatEdmonton(now)}</Chip>
+        <Chip>{formatLocalDateTime(now)}</Chip>
       </CardHeader>
 
       <div style={{ display: "grid", gap: 12 }}>
         <div>
-          <strong>Start:</strong> {formatEdmonton(start)}
+          <strong>Start:</strong> {formatLocalDateTime(start)}
         </div>
         <div>
           <strong>Elapsed since start:</strong> {fmtM(elapsedMins)}

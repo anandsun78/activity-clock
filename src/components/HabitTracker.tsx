@@ -2,7 +2,7 @@ import React, { useEffect, useMemo } from "react";
 // ⬇️ removed computeStreak import (it was using the wrong shape)
 // import { computeStreak } from "../utils/streakUtils";
 import "./HabitTracker.css";
-import { yyyyMmDdEdmonton } from "../dateUtils"; // Edmonton-aware day key
+import { yyyyMmDdLocal } from "../dateUtils"; // Local day key
 import {
   filterOutVacationMap,
   isVacationDay,
@@ -39,12 +39,12 @@ import { useHabitData, useHabitHistory } from "./habitTracker/hooks";
  * - Shows "minutes since last" for each counter (only stamped on increase)
  * - Aggregates ALL data since START_DATE (inclusive)
  * - Weight trend coercion: handles string weights from backend
- * - DAY BOUNDARIES and "today" are in America/Edmonton
+ * - DAY BOUNDARIES and "today" are in the user's local time zone
  */
 
 const HabitTracker = () => {
-  // "today" is the Edmonton day key
-  const today = yyyyMmDdEdmonton();
+  // "today" is the local day key
+  const today = yyyyMmDdLocal();
 
   const [vacationDays] = useVacationDays();
   const { habitData, loading, toggleHabit, updateNumber, updateStudy, getStudyVal } =

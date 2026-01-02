@@ -2,10 +2,10 @@ import React, { useEffect, useMemo, useState } from "react";
 import "./HabitTracker.css";
 import "./ActivityClock.css";
 import {
-  yyyyMmDdEdmonton,
+  yyyyMmDdLocal,
   diffMinutes,
-  startOfDayEdmonton,
-  minutesSinceEdmontonMidnight,
+  startOfDayLocal,
+  minutesSinceLocalMidnight,
 } from "../dateUtils";
 import { filterOutVacationLogs, useVacationDays } from "../vacationDays";
 import { fmtM } from "./activity/utils";
@@ -19,7 +19,7 @@ import {
   aggregateTopN,
   buildSeries,
   isWeekend,
-  splitByEdmontonMidnight,
+  splitByLocalMidnight,
   upsertTodayInHistory,
 } from "./activity/helpers";
 import type {
@@ -43,11 +43,11 @@ const TOP_N = 7;
 export default function ActivityClock() {
   const [now, setNow] = useState<Date>(new Date());
 
-  // Clamp initial start to Edmonton today if LS was from a prior day
+  // Clamp initial start to local today if LS was from a prior day
   const [start, setStart] = useState<Date>(() => {
     const ls = localStorage.getItem("activity_clock_last_stop");
     const lsDate = ls ? new Date(ls) : null;
-    const todayMid = startOfDayEdmonton(new Date());
+    const todayMid = startOfDayLocal(new Date());
     const initial = lsDate
       ? new Date(Math.max(lsDate.getTime(), todayMid.getTime()))
       : todayMid;
@@ -58,7 +58,7 @@ export default function ActivityClock() {
   const [minutesInput, setMinutesInput] = useState<string>(""); // minutes to log (optional)
   const [names, setNames] = useState<string[]>([]);
   const [todayLog, setTodayLog] = useState<DayLog>({
-    date: yyyyMmDdEdmonton(),
+    date: yyyyMmDdLocal(),
     sessions: [],
   });
   const [history, setHistory] = useState<DayLog[]>([]);
@@ -93,7 +93,7 @@ export default function ActivityClock() {
     (async () => {
       setLoading(true);
       try {
-        const today = yyyyMmDdEdmonton();
+        const today = yyyyMmDdLocal();
 
         // names
         {
@@ -134,9 +134,9 @@ export default function ActivityClock() {
           );
         } else {
           const ls = localStorage.getItem("activity_clock_last_stop");
-          const candidate = ls ? new Date(ls) : startOfDayEdmonton();
+          const candidate = ls ? new Date(ls) : startOfDayLocal();
           const clamped = new Date(
-            Math.max(candidate.getTime(), startOfDayEdmonton().getTime())
+            Math.max(candidate.getTime(), startOfDayLocal().getTime())
           );
           setStart(clamped);
         }
@@ -147,10 +147,10 @@ export default function ActivityClock() {
         const todayStr = today;
         for (
           let d = new Date(startD);
-          yyyyMmDdEdmonton(d) <= todayStr;
+          yyyyMmDdLocal(d) <= todayStr;
           d.setDate(d.getDate() + 1)
         ) {
-          const dayKey = yyyyMmDdEdmonton(d);
+          const dayKey = yyyyMmDdLocal(d);
           const r = await fetch(`${ACTIVITY_LOGS_ENDPOINT}?date=${dayKey}`);
           const txt = await r.text();
           let data = null;
@@ -168,14 +168,14 @@ export default function ActivityClock() {
     })();
   }, []);
 
-  // Today’s breakdown (Edmonton day)
+  // Today’s breakdown (local day)
   const todayBreakdown = useMemo<TodayBreakdown>(() => {
     const totals: Record<string, number> = {};
     for (const s of todayLog.sessions) {
       const m = diffMinutes(s.start, s.end);
       totals[s.activity] = (totals[s.activity] || 0) + m;
     }
-    const sinceMidnight = minutesSinceEdmontonMidnight(now);
+    const sinceMidnight = minutesSinceLocalMidnight(now);
     const rows = (Object.entries(totals) as [string, number][])
       .sort((a, b) => b[1] - a[1])
       .map(([k, v]) => ({
@@ -255,7 +255,7 @@ export default function ActivityClock() {
 
   // Build days + activity list for trends
   const trendData = useMemo(() => {
-    const todayKey = yyyyMmDdEdmonton(now);
+    const todayKey = yyyyMmDdLocal(now);
     const days = filteredHistory.map((log) => {
       const totals: Record<string, number> = {};
       for (const s of log?.sessions || []) {
@@ -265,7 +265,7 @@ export default function ActivityClock() {
 
       const tracked = Object.values(totals).reduce((a: number, b) => a + b, 0);
       const denom =
-        log.date === todayKey ? minutesSinceEdmontonMidnight(now) : 1440;
+        log.date === todayKey ? minutesSinceLocalMidnight(now) : 1440;
 
       const safeDenom = Math.max(1, Math.round(denom));
       const untracked = Math.max(0, safeDenom - Math.min(tracked, safeDenom));
@@ -384,7 +384,7 @@ export default function ActivityClock() {
     const minutes = Number(explicitMinutes);
     const useMinutes = Number.isFinite(minutes) && minutes > 0;
 
-    const todayMid = startOfDayEdmonton();
+    const todayMid = startOfDayLocal();
     const nowD = new Date();
 
     let sessionStart = new Date(Math.max(start.getTime(), todayMid.getTime()));
@@ -400,7 +400,7 @@ export default function ActivityClock() {
 
     if (sessionEnd <= sessionStart) return;
 
-    const segments = splitByEdmontonMidnight(sessionStart, sessionEnd);
+    const segments = splitByLocalMidnight(sessionStart, sessionEnd);
 
     // For undo, store the exact values we send to the backend (ISO strings)
     const segmentsForUndo = segments.map((seg) => ({
@@ -413,7 +413,7 @@ export default function ActivityClock() {
 
     // Save each segment to backend
     for (const seg of segments) {
-      const dateStr = yyyyMmDdEdmonton(seg.start);
+      const dateStr = yyyyMmDdLocal(seg.start);
       const res = await fetch(`${ACTIVITY_LOGS_ENDPOINT}?date=${dateStr}`, {
         method: "POST",
         headers: { "Content-Type": CONTENT_TYPE_JSON },
@@ -434,7 +434,7 @@ export default function ActivityClock() {
 
       setHistory((prev) => upsertTodayInHistory(prev, data));
 
-      if (dateStr === yyyyMmDdEdmonton()) {
+      if (dateStr === yyyyMmDdLocal()) {
         latestTodayDoc = data;
       }
     }
@@ -467,7 +467,7 @@ export default function ActivityClock() {
     try {
       // 1) Tell backend to remove those sessions
       for (const seg of segments) {
-        const dateStr = yyyyMmDdEdmonton(new Date(seg.start));
+        const dateStr = yyyyMmDdLocal(new Date(seg.start));
         await fetch(`${ACTIVITY_LOGS_ENDPOINT}?date=${dateStr}`, {
           method: "DELETE",
           headers: { "Content-Type": CONTENT_TYPE_JSON },
@@ -482,7 +482,7 @@ export default function ActivityClock() {
       }
 
       // 2) Reload today's doc from server so frontend matches DB
-      const today = yyyyMmDdEdmonton();
+      const today = yyyyMmDdLocal();
       try {
         const r = await fetch(`${ACTIVITY_LOGS_ENDPOINT}?date=${today}`);
         const t = await r.text();
@@ -501,7 +501,7 @@ export default function ActivityClock() {
           const dateStr = day.date;
           const filteredSessions = (day.sessions || []).filter((sess) => {
             return !segments.some((seg) => {
-              const segDate = yyyyMmDdEdmonton(new Date(seg.start));
+              const segDate = yyyyMmDdLocal(new Date(seg.start));
               return (
                 segDate === dateStr &&
                 new Date(sess.start).getTime() ===

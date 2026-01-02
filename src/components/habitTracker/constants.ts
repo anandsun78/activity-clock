@@ -28,7 +28,7 @@ export const LEGACY_MAP: Record<string, string> = {
   AP: "resumeApply",
 };
 
-// Aggregate ALL data since this date (inclusive) — string key in Edmonton time
+// Aggregate ALL data since this date (inclusive) — string key in local time
 export const START_DATE = "2025-12-01";
 
 // Map counters -> timestamp keys for "last happened"

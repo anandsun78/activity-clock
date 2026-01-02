@@ -1,11 +1,11 @@
 import React, { useMemo, useState } from "react";
-import { yyyyMmDdEdmonton } from "../dateUtils";
+import { yyyyMmDdLocal } from "../dateUtils";
 import { useVacationDays } from "../vacationDays";
 
 export default function VacationDaysPanel() {
   const [days, setDays] = useVacationDays();
   const [input, setInput] = useState<string>("");
-  const today = yyyyMmDdEdmonton();
+  const today = yyyyMmDdLocal();
 
   const sortedDays = useMemo(() => [...days].sort(), [days]);
 

@@ -1,5 +1,5 @@
 import React from "react";
-import { diffMinutes, formatEdmontonTime } from "../../dateUtils";
+import { diffMinutes, formatLocalTime } from "../../dateUtils";
 import { colorForActivity, fmtM } from "./utils";
 import "../ActivityClock.css";
 
@@ -122,7 +122,7 @@ const SessionsPanel: React.FC<SessionsPanelProps> = ({
                 </div>
                 <div className="ac-session-body">
                   <div className="ac-session-time">
-                    {formatEdmontonTime(s.start)} — {formatEdmontonTime(s.end)}
+                    {formatLocalTime(s.start)} — {formatLocalTime(s.end)}
                   </div>
                   {isGap && (
                     <div className="ac-muted">No activity logged between these times.</div>

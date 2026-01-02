@@ -1,4 +1,4 @@
-import { yyyyMmDdEdmonton, startOfDayEdmonton } from "../../dateUtils";
+import { yyyyMmDdLocal, startOfDayLocal } from "../../dateUtils";
 import { isVacationDay } from "../../vacationDays";
 import { LEGACY_MAP } from "./constants";
 import type { HabitHistoryMap } from "./types";
@@ -19,15 +19,15 @@ export const minutesSince = (iso?: string | null) => {
   return Math.max(0, Math.floor((Date.now() - t) / 60000));
 };
 
-// Per-habit streak helper (Edmonton-local)
+// Per-habit streak helper (local time zone)
 export function getHabitStreak(habitName: string, historyMap: HabitHistoryMap) {
-  // Walk backward from Edmonton midnight counting consecutive true days
+  // Walk backward from local midnight counting consecutive true days
   let streak = 0;
-  let cursor = new Date(startOfDayEdmonton(new Date()));
+  let cursor = new Date(startOfDayLocal(new Date()));
   // guard against infinite loop if historyMap is empty
   for (let i = 0; i < 3660; i++) {
     // ~10 years max
-    const key = yyyyMmDdEdmonton(cursor);
+    const key = yyyyMmDdLocal(cursor);
     if (isVacationDay(key)) {
       cursor.setUTCDate(cursor.getUTCDate() - 1);
       continue; // vacation days neither break nor extend streaks
