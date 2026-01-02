@@ -32,7 +32,7 @@ Create a `.env` file in the project root:
 ```bash
 APP_PASSWORD - password to access the site (for ex 4499)
 APP_SESSION_SECRET - used along side the password can use any hash value here.
-MONGODB_URI - the mongodb atlas uri ex: mongodb+srv://your_uri
+MONGODB_URI - the mongodb atlas uri (for ex: mongodb+srv://your_uri)
 ```
 
 ## Deployment
