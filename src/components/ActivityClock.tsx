@@ -36,7 +36,7 @@ import SessionsPanel from "./activity/SessionsPanel";
 import VacationDaysPanel from "./VacationDaysPanel";
 import { Chip } from "./shared/Card";
 
-const START_DATE_ISO = "2025-12-01";
+const START_DATE_ISO = "2026-01-01";
 const TOP_N = 7;
 
 /* -------------------- Main -------------------- */
