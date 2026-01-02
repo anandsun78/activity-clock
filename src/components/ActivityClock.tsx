@@ -196,10 +196,10 @@ export default function ActivityClock() {
     return { rows, sinceMidnight, totalTracked };
   }, [todayLog, now]);
 
-  const filteredHistory = useMemo(
-    () => filterOutVacationLogs(history),
-    [history, vacationDays]
-  );
+  const filteredHistory = useMemo(() => {
+    void vacationDays;
+    return filterOutVacationLogs(history);
+  }, [history, vacationDays]);
 
   // Historical (per day averages)
   const historical = useMemo<HistoricalSummary>(() => {

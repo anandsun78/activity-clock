@@ -22,5 +22,10 @@ and light mode.
 - `npm test` — run the CRA test runner (if added).
 - `npm run build` — production build.
 
+## Required ENV Vars:
+APP_PASSWORD - password to access the site (for ex 4499)
+APP_SESSION_SECRET - used along side the password can use any hash value here.
+MONGODB_URI - the mongodb atlas uri ex: mongodb+srv://your_uri
+
 ## Deployment
 Netlify-ready via `netlify.toml`. Functions are bundled from `netlify/functions` with `esbuild` and proxied under `/api/*`.

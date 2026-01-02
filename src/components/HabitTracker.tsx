@@ -86,10 +86,10 @@ const HabitTracker = () => {
     : null;
 
   // ---------- merge history with today (so fresh edits count) ----------
-  const filteredHistory = useMemo(
-    () => filterOutVacationMap(history),
-    [history, vacationDays]
-  );
+  const filteredHistory = useMemo(() => {
+    void vacationDays;
+    return filterOutVacationMap(history);
+  }, [history, vacationDays]);
 
   const mergedHistory = useMemo(
     () =>
