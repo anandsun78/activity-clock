@@ -5,48 +5,20 @@ import { NAV_ITEMS, ROUTES } from "./constants/routes";
 
 function NavBar() {
   return (
-    <header
-      className="card"
-      style={{
-        position: "sticky",
-        top: 0,
-        zIndex: 10,
-        margin: "0 auto",
-        marginTop: 24,
-        padding: 14,
-        maxWidth: 1200,
-        width: "calc(100% - 24px)",
-        backdropFilter: "blur(12px)",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 16,
-          flexWrap: "wrap",
-        }}
-      >
-        <div style={{ fontWeight: 700, letterSpacing: 0.4, fontSize: 18 }}>
-          activity-clock
+    <header className="site-header">
+      <div className="site-header-inner">
+        <div className="brand">
+          <div className="brand-title">activity-clock</div>
+          <div className="brand-subtitle">your day, mapped with intent</div>
         </div>
-        <nav style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <nav className="site-nav">
           {NAV_ITEMS.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
-              style={({ isActive }) => ({
-                padding: "8px 12px",
-                borderRadius: 12,
-                border: `1px solid ${isActive ? "var(--primary)" : "var(--border)"}`,
-                background: isActive ? "rgba(124, 58, 237, 0.12)" : "#ffffff",
-                color: "#0f172a",
-                fontSize: 14,
-                fontWeight: 600,
-                textDecoration: "none",
-                boxShadow: isActive ? "0 10px 30px rgba(124, 58, 237, 0.25)" : "0 2px 10px rgba(15,23,42,0.06)",
-              })}
+              className={({ isActive }) =>
+                `nav-link${isActive ? " is-active" : ""}`
+              }
             >
               {item.label}
             </NavLink>

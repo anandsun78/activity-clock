@@ -1,86 +1,28 @@
 /* HabitTracker.css */
 
-.habit-tracker {
-  max-width: 700px;
-  margin: 0 auto;
-  padding: 20px;
-  font-family: Arial, sans-serif;
-}
-
 .habit-tracker h2 {
   text-align: center;
-  color: #333;
+  color: var(--ink);
   margin-bottom: 20px;
 }
 
-.habit-list {
-  list-style: none;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 15px;
-}
-
-.habit-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  background: #fff;
-  transition: background 0.2s, border-color 0.2s;
-}
-
-.habit-card.done {
-  background: #e6f9ed;
-  border-color: #5cb85c;
-}
-
-.habit-label {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  font-weight: 500;
-  color: #333;
-}
-
-.habit-label input {
-  margin-right: 10px;
-}
-
-.streak {
-  font-size: 0.9rem;
-  font-weight: bold;
-  color: #888;
-}
-
-.streak.active {
-  color: #28a745; /* green if streak > 0 */
-}
 
 /* Layout base */
 .habit-tracker {
-  max-width: 940px;
+  max-width: 980px;
   margin: 0 auto;
-  padding: 16px 20px 48px;
-}
-
-.page-title {
-  margin: 12px 0 16px;
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: #1f2937; /* slate-800 */
+  display: grid;
+  gap: 16px;
 }
 
 /* Cards */
 .card {
-  background: #ffffff;
-  border: 1px solid #e5e7eb; /* gray-200 */
-  border-radius: 16px;
-  padding: 16px;
-  margin-bottom: 16px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  margin-bottom: 0;
+  box-shadow: var(--shadow-card);
 }
 
 .card-header {
@@ -88,22 +30,22 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .card h3 {
-  font-size: 1.05rem;
+  font-size: 1.1rem;
   margin: 0;
-  color: #111827; /* gray-900 */
+  color: var(--ink);
 }
 
 .chip {
   font-size: 0.75rem;
-  padding: 4px 8px;
+  padding: 4px 10px;
   border-radius: 999px;
-  background: #f3f4f6; /* gray-100 */
-  border: 1px solid #e5e7eb;
-  color: #374151;
+  background: rgba(15, 118, 110, 0.12);
+  border: 1px solid rgba(15, 118, 110, 0.25);
+  color: var(--primary-strong);
 }
 
 /* Metrics grid (daily inputs) */
@@ -116,7 +58,7 @@
 .metric label {
   display: block;
   font-size: 0.85rem;
-  color: #374151;
+  color: var(--muted);
   margin-bottom: 6px;
 }
 
@@ -124,30 +66,32 @@
   width: 100%;
   font-size: 0.95rem;
   padding: 10px 12px;
-  border: 1px solid #d1d5db; /* gray-300 */
-  border-radius: 10px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
   outline: none;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .metric input[type="number"]:focus {
-  border-color: #3b82f6; /* blue-500 */
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.15);
 }
 
 .metric.with-alert {
-  border-left: 4px solid #f59e0b;
+  border-left: 4px solid var(--accent);
+  padding-left: 8px;
 }
 
 .metric .hint {
   display: block;
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--muted);
   margin-top: 6px;
 }
 
 .metric.warn input[type="number"] {
-  border-color: #ef4444; /* red-500 */
+  border-color: #ef4444;
 }
 
 .metric-input.with-unit {
@@ -158,11 +102,11 @@
 
 .metric-input .unit {
   font-size: 0.85rem;
-  color: #6b7280;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
+  color: var(--muted);
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
   padding: 8px 10px;
-  border-radius: 8px;
+  border-radius: 10px;
 }
 
 /* Totals row (daily) */
@@ -174,42 +118,42 @@
 }
 
 .total {
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 8px 12px;
   font-size: 0.92rem;
-  color: #111827;
+  color: var(--ink);
 }
 
 .total.ok {
-  border-color: #d1fae5;
-  background: #ecfdf5;
-} /* greenish */
+  border-color: rgba(16, 185, 129, 0.35);
+  background: rgba(16, 185, 129, 0.1);
+}
 .total.warn {
-  border-color: #fee2e2;
-  background: #fef2f2;
-} /* reddish */
+  border-color: rgba(248, 113, 113, 0.4);
+  background: rgba(248, 113, 113, 0.12);
+}
 
 .delta-badge {
   margin-left: 8px;
   padding: 2px 8px;
   font-size: 0.75rem;
   border-radius: 999px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border);
   background: #fff;
-  color: #374151;
+  color: var(--muted);
 }
 
 .delta-badge.good {
-  background: #ecfdf5;
-  border-color: #a7f3d0;
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.3);
   color: #065f46;
 }
 
 .delta-badge.bad {
-  background: #fef2f2;
-  border-color: #fecaca;
+  background: rgba(248, 113, 113, 0.12);
+  border-color: rgba(248, 113, 113, 0.35);
   color: #991b1b;
 }
 
@@ -222,31 +166,31 @@
 }
 
 .stat {
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 10px;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px;
 }
 
 .stat.warn {
-  border-color: #fecaca;
-  background: #fff1f2;
+  border-color: rgba(248, 113, 113, 0.35);
+  background: rgba(248, 113, 113, 0.12);
 }
 .stat.ok {
-  border-color: #d1fae5;
-  background: #f0fdf4;
+  border-color: rgba(16, 185, 129, 0.35);
+  background: rgba(16, 185, 129, 0.1);
 }
 
 .stat-label {
   font-size: 0.8rem;
-  color: #6b7280;
+  color: var(--muted);
 }
 
 .stat-value {
   margin-top: 4px;
   font-size: 1.05rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--ink);
 }
 
 .stat-value.emphasis {
@@ -256,13 +200,13 @@
 .stat-sub {
   margin-top: 4px;
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--muted);
 }
 
 .summary-card .divider {
   height: 100%;
   width: 1px;
-  background: #e5e7eb;
+  background: var(--border);
   margin: 0 4px;
 }
 
@@ -277,18 +221,19 @@
 }
 
 .habit-card {
-  border: 1px solid #e5e7eb;
-  border-radius: 14px;
-  padding: 12px;
-  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 12px 14px;
+  background: var(--surface);
   display: flex;
   align-items: center;
   justify-content: space-between;
+  box-shadow: 0 8px 18px rgba(31, 41, 55, 0.08);
 }
 
 .habit-card.done {
-  background: #f0fdf4; /* green-50 */
-  border-color: #a7f3d0; /* green-200 */
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.35);
 }
 
 .habit-label {
@@ -296,7 +241,7 @@
   align-items: center;
   gap: 10px;
   font-weight: 600;
-  color: #111827;
+  color: var(--ink);
 }
 
 .habit-label input[type="checkbox"] {
@@ -309,18 +254,18 @@
   font-size: 0.7rem;
   padding: 2px 6px;
   border-radius: 999px;
-  background: #eef2ff; /* indigo-50 */
-  border: 1px solid #e0e7ff; /* indigo-100 */
-  color: #3730a3; /* indigo-800 */
+  background: rgba(249, 115, 22, 0.12);
+  border: 1px solid rgba(249, 115, 22, 0.3);
+  color: #9a3412;
 }
 
 .streak {
   font-size: 0.85rem;
-  color: #6b7280;
+  color: var(--muted);
 }
 
 .streak.active {
-  color: #ef4444; /* red-500 */
+  color: var(--primary);
   font-weight: 700;
 }
 
@@ -344,9 +289,9 @@
 .weight-chart-wrapper {
   position: relative;
   padding: 12px;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  background: #f9fafb;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-strong);
 }
 
 .weight-chart-svg {
@@ -383,7 +328,7 @@
   display: flex;
   justify-content: space-between;
   font-size: 0.8rem;
-  color: #6b7280;
+  color: var(--muted);
   gap: 8px;
   flex-wrap: wrap;
 }
@@ -402,10 +347,10 @@
 
 .vacation-controls input[type="date"] {
   padding: 8px 10px;
-  border-radius: 10px;
-  border: 1px solid #d1d5db;
-  background: #ffffff;
-  color: #0f172a;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink);
 }
 
 .vacation-list {
@@ -421,9 +366,9 @@
   gap: 8px;
   padding: 6px 10px;
   border-radius: 999px;
-  border: 1px solid #e5e7eb;
-  background: #f8fafc;
-  color: #0f172a;
+  border: 1px solid var(--border);
+  background: var(--surface-strong);
+  color: var(--ink);
   font-size: 0.85rem;
 }
 
@@ -431,12 +376,12 @@
   border: none;
   background: transparent;
   cursor: pointer;
-  color: #6b7280;
+  color: var(--muted);
   font-size: 0.9rem;
 }
 
 .vacation-empty {
   margin-top: 8px;
   font-size: 0.85rem;
-  color: #6b7280;
+  color: var(--muted);
 }

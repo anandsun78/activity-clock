@@ -56,10 +56,10 @@ export default function ActivityLoggerCard({
             style={{
               flex: 1,
               padding: "10px 12px",
-              borderRadius: 10,
+              borderRadius: 12,
               border: "1px solid var(--ac-border)",
-              background: "#ffffff",
-              color: "#0f172a",
+              background: "var(--surface)",
+              color: "var(--ink)",
             }}
           />
           <input
@@ -71,10 +71,10 @@ export default function ActivityLoggerCard({
             style={{
               width: 130,
               padding: "10px 12px",
-              borderRadius: 10,
+              borderRadius: 12,
               border: "1px solid var(--ac-border)",
-              background: "#ffffff",
-              color: "#0f172a",
+              background: "var(--surface)",
+              color: "var(--ink)",
             }}
           />
           <button
