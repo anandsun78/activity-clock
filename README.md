@@ -1,4 +1,4 @@
-# Activity Clock - Productivity Timer
+# Activity Clock - Productivity Timer App
 
 A productivity timer to track every second of the day to see how time is being used. There is also functionality to see streaks of daily habits such as waking up early, gym etc.
 
