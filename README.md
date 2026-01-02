@@ -1,7 +1,7 @@
 # activity-clock
 
-A productivity timer to track every second of the day to see how time is being used. The UI has both a dark 
-and light mode.
+A productivity timer to track every second of the day to see how time is being used. There is also
+functionality to see if following daily habits that are set. 
 
 ## Stack
 - React 18 + TypeScript, React Router 6
@@ -22,7 +22,9 @@ and light mode.
 - `npm test` — run the CRA test runner (if added).
 - `npm run build` — production build.
 
-## Required ENV Vars:
+## Required ENV Vars/Setup:
+Require a mongodb atlas account. Can get a free account from https://account.mongodb.com/
+
 APP_PASSWORD - password to access the site (for ex 4499)
 APP_SESSION_SECRET - used along side the password can use any hash value here.
 MONGODB_URI - the mongodb atlas uri ex: mongodb+srv://your_uri
