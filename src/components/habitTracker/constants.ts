@@ -16,8 +16,7 @@ export const HABITS = [
   "Proj",
   "Comm",
   LESS_WASTE_HABIT_LABEL,
-  "No news for the day",
-  "No external music for the day",
+  "No mins wasted AT ALL"
 ];
 
 // Study categories (renamed); includes legacy fallback mapping for old data
