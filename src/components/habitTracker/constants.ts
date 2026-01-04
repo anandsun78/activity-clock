@@ -13,7 +13,6 @@ export const HABITS = [
   "Steps",
   "LT",
   "Typing",
-  "Proj",
   "Comm",
   LESS_WASTE_HABIT_LABEL,
   "No mins wasted AT ALL"
