@@ -13,7 +13,6 @@ import {
   HABITS,
   STUDY_KEYS,
   START_DATE,
-  LESS_WASTE_HABIT_LABEL,
   WASTE_LIMIT_MINUTES,
 } from "./habitTracker/constants";
 import DailyMetrics from "./habitTracker/DailyMetrics";
@@ -172,7 +171,6 @@ const HabitTracker = () => {
         dayStudy > 0 ||
         hasWastedMin ||
         hasWeight ||
-        typeof day[LESS_WASTE_HABIT_LABEL] !== "undefined" ||
         isFiniteNum(day.newsAccessCount) ||
         isFiniteNum(day.musicListenCount) ||
         isFiniteNum(day.jlCount)

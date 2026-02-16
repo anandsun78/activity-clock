@@ -1,6 +1,4 @@
 export const WASTE_LIMIT_MINUTES = 50;
-export const LESS_WASTE_HABIT_LABEL = `Less than ${WASTE_LIMIT_MINUTES}m waste`;
-
 export const HABITS = [
   "Weight Check",
   "Cold Shower",
@@ -13,7 +11,6 @@ export const HABITS = [
   "LT",
   "Typing",
   "Comm",
-  LESS_WASTE_HABIT_LABEL,
   "No mins wasted AT ALL"
 ];
 
@@ -26,7 +23,7 @@ export const LEGACY_MAP: Record<string, string> = {
 };
 
 // Aggregate ALL data since this date (inclusive) — string key in local time
-export const START_DATE = "2026-01-01";
+export const START_DATE = "2026-02-16";
 
 // Map counters -> timestamp keys for "last happened"
 export const EVENT_KEYS: Record<string, string> = {

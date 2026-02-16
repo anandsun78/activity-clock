@@ -1,9 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-  EVENT_KEYS,
-  LESS_WASTE_HABIT_LABEL,
-  WASTE_LIMIT_MINUTES,
-} from "./constants";
+import { EVENT_KEYS, WASTE_LIMIT_MINUTES } from "./constants";
 import { CONTENT_TYPE_JSON, HABITS_ENDPOINT } from "../../constants/api";
 import type { HabitData, HabitHistoryMap } from "./types";
 import { asNumOrNull, getStudyValFrom } from "./utils";
@@ -34,16 +30,13 @@ export function useHabitData(today: string) {
 
   const saveHabits = useCallback(
     async (updated: HabitData) => {
-      const lessWasteKey = LESS_WASTE_HABIT_LABEL;
       const wm = asNumOrNull(updated.wastedMin);
 
       const computed = { ...updated };
 
       if (wm !== null) {
-        computed[lessWasteKey] = wm <= WASTE_LIMIT_MINUTES;
         computed.wasteDelta = wm - WASTE_LIMIT_MINUTES;
       } else {
-        delete computed[lessWasteKey];
         delete computed.wasteDelta;
       }
 
@@ -63,7 +56,6 @@ export function useHabitData(today: string) {
 
   const toggleHabit = useCallback(
     (habit: string) => {
-      if (habit === LESS_WASTE_HABIT_LABEL) return;
       const updated = { ...habitData, [habit]: !habitData[habit] };
       saveHabits(updated);
     },
