@@ -7,6 +7,7 @@ type ActivityLoggerCardProps = {
   now: Date;
   start: Date;
   elapsedMins: number;
+  elapsedLabel?: string;
   nameInput: string;
   minutesInput: string;
   names: string[];
@@ -21,6 +22,7 @@ export default function ActivityLoggerCard({
   now,
   start,
   elapsedMins,
+  elapsedLabel,
   nameInput,
   minutesInput,
   names,
@@ -44,7 +46,8 @@ export default function ActivityLoggerCard({
           <strong>Start:</strong> {formatLocalDateTime(start)}
         </div>
         <div>
-          <strong>Elapsed since start:</strong> {fmtM(elapsedMins)}
+          <strong>Elapsed since start:</strong>{" "}
+          {elapsedLabel || fmtM(elapsedMins)}
         </div>
 
         <div className="metric-input with-unit" style={{ gap: 8 }}>

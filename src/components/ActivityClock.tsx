@@ -348,8 +348,21 @@ export default function ActivityClock() {
     });
   }, [chosenKey, chosenActivities]);
 
-  // Elapsed minutes since start
+  // Elapsed time since start
   const elapsedMins = useMemo(() => diffMinutes(start, now), [start, now]);
+  const elapsedSeconds = useMemo(
+    () => Math.max(0, Math.floor((now.getTime() - start.getTime()) / 1000)),
+    [start, now]
+  );
+  const elapsedLabel = useMemo(() => {
+    const s = Math.max(0, elapsedSeconds);
+    const hours = Math.floor(s / 3600);
+    const minutes = Math.floor((s % 3600) / 60);
+    const seconds = s % 60;
+    if (hours > 0) return `${hours}h ${minutes}m ${seconds}s`;
+    if (minutes > 0) return `${minutes}m ${seconds}s`;
+    return `${seconds}s`;
+  }, [elapsedSeconds]);
 
   // Update document title
   useEffect(() => {
@@ -619,6 +632,7 @@ export default function ActivityClock() {
         now={now}
         start={start}
         elapsedMins={elapsedMins}
+        elapsedLabel={elapsedLabel}
         nameInput={nameInput}
         minutesInput={minutesInput}
         names={names}
