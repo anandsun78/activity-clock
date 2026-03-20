@@ -11,6 +11,7 @@ type ActivityLoggerCardProps = {
   nameInput: string;
   minutesInput: string;
   names: string[];
+  isBusy?: boolean;
   onNameChange: (value: string) => void;
   onMinutesChange: (value: string) => void;
   onLog: (activityName?: string, explicitMinutes?: number) => void;
@@ -26,6 +27,7 @@ export default function ActivityLoggerCard({
   nameInput,
   minutesInput,
   names,
+  isBusy = false,
   onNameChange,
   onMinutesChange,
   onLog,
@@ -83,17 +85,21 @@ export default function ActivityLoggerCard({
           <button
             onClick={() => onLog(undefined, parsedMinutes)}
             className="chip"
-            style={{ cursor: "pointer" }}
+            disabled={isBusy}
+            style={{
+              cursor: isBusy ? "not-allowed" : "pointer",
+              opacity: isBusy ? 0.6 : 1,
+            }}
           >
             Log segment
           </button>
           <button
             onClick={onUndo}
             className="chip"
-            disabled={!canUndo}
+            disabled={!canUndo || isBusy}
             style={{
-              cursor: canUndo ? "pointer" : "not-allowed",
-              opacity: canUndo ? 1 : 0.5,
+              cursor: !canUndo || isBusy ? "not-allowed" : "pointer",
+              opacity: !canUndo || isBusy ? 0.5 : 1,
             }}
           >
             Undo last
@@ -118,8 +124,12 @@ export default function ActivityLoggerCard({
                 <button
                   key={n}
                   className="chip"
-                  style={{ cursor: "pointer" }}
+                  style={{
+                    cursor: isBusy ? "not-allowed" : "pointer",
+                    opacity: isBusy ? 0.6 : 1,
+                  }}
                   onClick={() => onLog(n, parsedMinutes)}
+                  disabled={isBusy}
                   title={
                     minutesInput
                       ? `Log ${minutesInput}m of "${n}" from Start`

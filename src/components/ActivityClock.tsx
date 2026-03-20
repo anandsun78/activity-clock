@@ -36,7 +36,7 @@ import SessionsPanel from "./activity/SessionsPanel";
 import VacationDaysPanel from "./VacationDaysPanel";
 import { Chip } from "./shared/Card";
 
-const START_DATE_ISO = "2026-02-16";
+const START_DATE_ISO = "2026-03-20";
 const TOP_N = 7;
 
 /* -------------------- Main -------------------- */
@@ -75,6 +75,9 @@ export default function ActivityClock() {
   const [trendDays, setTrendDays] = useState<number>(30);
   const [mode, setMode] = useState<"m" | "pct">("m"); // minutes | pct
   const [focus, setFocus] = useState<string>("");
+
+  const [isLogging, setIsLogging] = useState<boolean>(false);
+  const [isUndoing, setIsUndoing] = useState<boolean>(false);
 
   // ✅ For undo: previous start + segments we just logged
   const [lastLogged, setLastLogged] = useState<LoggedSegments>(null);
@@ -389,6 +392,7 @@ export default function ActivityClock() {
   //   - explicitMinutes (backfilling a chunk), OR
   //   - full elapsed (start -> now) when minutes is empty
   async function logSinceLastStop(activityName, explicitMinutes) {
+    if (isLogging || isUndoing) return;
     const clean = (activityName ?? nameInput).trim();
     if (!clean) return;
 
@@ -413,6 +417,8 @@ export default function ActivityClock() {
 
     if (sessionEnd <= sessionStart) return;
 
+    setIsLogging(true);
+
     const segments = splitByLocalMidnight(sessionStart, sessionEnd);
 
     // For undo, store the exact values we send to the backend (ISO strings)
@@ -424,60 +430,66 @@ export default function ActivityClock() {
 
     let latestTodayDoc = null;
 
-    // Save each segment to backend
-    for (const seg of segments) {
-      const dateStr = yyyyMmDdLocal(seg.start);
-      const res = await fetch(`${ACTIVITY_LOGS_ENDPOINT}?date=${dateStr}`, {
-        method: "POST",
-        headers: { "Content-Type": CONTENT_TYPE_JSON },
-        body: JSON.stringify({
-          session: { start: seg.start, end: seg.end, activity: clean },
-        }),
+    try {
+      // Save each segment to backend
+      for (const seg of segments) {
+        const dateStr = yyyyMmDdLocal(seg.start);
+        const res = await fetch(`${ACTIVITY_LOGS_ENDPOINT}?date=${dateStr}`, {
+          method: "POST",
+          headers: { "Content-Type": CONTENT_TYPE_JSON },
+          body: JSON.stringify({
+            session: { start: seg.start, end: seg.end, activity: clean },
+          }),
+        });
+
+        const text = await res.text();
+        let data = null;
+        try {
+          data = text ? JSON.parse(text) : null;
+        } catch {}
+        if (!res.ok || !data) {
+          console.error("Failed to save session", res.status, text);
+          return;
+        }
+
+        setHistory((prev) => upsertTodayInHistory(prev, data));
+
+        if (dateStr === yyyyMmDdLocal()) {
+          latestTodayDoc = data;
+        }
+      }
+
+      if (latestTodayDoc) setTodayLog(latestTodayDoc);
+
+      await ensureNamePersisted(clean);
+
+      // Move start forward to the end of what we just logged
+      const newStart = sessionEnd;
+      setStart(newStart);
+      localStorage.setItem("activity_clock_last_stop", newStart.toISOString());
+
+      // Store undo info
+      setLastLogged({
+        prevStart: prevStart.toISOString(),
+        segments: segmentsForUndo,
       });
 
-      const text = await res.text();
-      let data = null;
-      try {
-        data = text ? JSON.parse(text) : null;
-      } catch {}
-      if (!res.ok || !data) {
-        console.error("Failed to save session", res.status, text);
-        return;
-      }
-
-      setHistory((prev) => upsertTodayInHistory(prev, data));
-
-      if (dateStr === yyyyMmDdLocal()) {
-        latestTodayDoc = data;
-      }
+      setNameInput("");
+      setMinutesInput("");
+    } finally {
+      setIsLogging(false);
     }
-
-    if (latestTodayDoc) setTodayLog(latestTodayDoc);
-
-    await ensureNamePersisted(clean);
-
-    // Move start forward to the end of what we just logged
-    const newStart = sessionEnd;
-    setStart(newStart);
-    localStorage.setItem("activity_clock_last_stop", newStart.toISOString());
-
-    // Store undo info
-    setLastLogged({
-      prevStart: prevStart.toISOString(),
-      segments: segmentsForUndo,
-    });
-
-    setNameInput("");
-    setMinutesInput("");
   }
 
   // ✅ Undo last logged chunk (also in DB)
   async function undoLast() {
+    if (isLogging || isUndoing) return;
     if (!lastLogged || !lastLogged.segments?.length) return;
 
     const { prevStart, segments } = lastLogged;
 
     try {
+      setIsUndoing(true);
       // 1) Tell backend to remove those sessions
       for (const seg of segments) {
         const dateStr = yyyyMmDdLocal(new Date(seg.start));
@@ -538,6 +550,8 @@ export default function ActivityClock() {
       setLastLogged(null);
     } catch (e) {
       console.error("Undo failed", e);
+    } finally {
+      setIsUndoing(false);
     }
   }
 
@@ -636,6 +650,7 @@ export default function ActivityClock() {
         nameInput={nameInput}
         minutesInput={minutesInput}
         names={names}
+        isBusy={isLogging || isUndoing}
         onNameChange={setNameInput}
         onMinutesChange={setMinutesInput}
         onLog={logSinceLastStop}
