@@ -1,5 +1,5 @@
 import React from "react";
-import { formatLocalDateTime } from "../../dateUtils";
+import { formatLocalDateTime, yyyyMmDdLocal } from "../../dateUtils";
 import { fmtM } from "./utils";
 import { Card, CardHeader, Chip } from "../shared/Card";
 
@@ -8,10 +8,14 @@ type ActivityLoggerCardProps = {
   start: Date;
   elapsedMins: number;
   elapsedLabel?: string;
+  startDateInput: string;
+  startDateError?: string;
   nameInput: string;
   minutesInput: string;
   names: string[];
   isBusy?: boolean;
+  onStartDateChange: (value: string) => void;
+  onApplyStartDate: () => void;
   onNameChange: (value: string) => void;
   onMinutesChange: (value: string) => void;
   onLog: (activityName?: string, explicitMinutes?: number) => void;
@@ -24,10 +28,14 @@ export default function ActivityLoggerCard({
   start,
   elapsedMins,
   elapsedLabel,
+  startDateInput,
+  startDateError,
   nameInput,
   minutesInput,
   names,
   isBusy = false,
+  onStartDateChange,
+  onApplyStartDate,
   onNameChange,
   onMinutesChange,
   onLog,
@@ -50,6 +58,38 @@ export default function ActivityLoggerCard({
         <div>
           <strong>Elapsed since start:</strong>{" "}
           {elapsedLabel || fmtM(elapsedMins)}
+        </div>
+        <div style={{ display: "grid", gap: 8 }}>
+          <strong>History start date:</strong>
+          <div className="metric-input with-unit" style={{ gap: 8 }}>
+            <input
+              type="date"
+              value={startDateInput}
+              onChange={(e) => onStartDateChange(e.target.value)}
+              max={yyyyMmDdLocal()}
+              style={{
+                padding: "10px 12px",
+                borderRadius: 12,
+                border: "1px solid var(--ac-border)",
+                background: "var(--surface)",
+                color: "var(--ink)",
+              }}
+            />
+            <button
+              onClick={onApplyStartDate}
+              className="chip"
+              disabled={isBusy}
+              style={{
+                cursor: isBusy ? "not-allowed" : "pointer",
+                opacity: isBusy ? 0.6 : 1,
+              }}
+            >
+              Apply start date
+            </button>
+          </div>
+          {startDateError && (
+            <div style={{ fontSize: 12, color: "#ef4444" }}>{startDateError}</div>
+          )}
         </div>
 
         <div className="metric-input with-unit" style={{ gap: 8 }}>

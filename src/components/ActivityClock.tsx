@@ -35,12 +35,13 @@ import TodayBreakdownCard from "./activity/TodayBreakdownCard";
 import SessionsPanel from "./activity/SessionsPanel";
 import VacationDaysPanel from "./VacationDaysPanel";
 import { Chip } from "./shared/Card";
+import { normalizeStartDateInput, useStartDate } from "../startDate";
 
-const START_DATE_ISO = "2026-03-20";
 const TOP_N = 7;
 
 /* -------------------- Main -------------------- */
 export default function ActivityClock() {
+  const { startDateIso, setStartDateIso } = useStartDate();
   const [now, setNow] = useState<Date>(new Date());
 
   // Clamp initial start to local today if LS was from a prior day
@@ -68,6 +69,8 @@ export default function ActivityClock() {
   const [mergeAdjacent, setMergeAdjacent] = useState<boolean>(true);
   const [showGaps, setShowGaps] = useState<boolean>(true);
   const [activityFilter, setActivityFilter] = useState<string>("All");
+  const [startDateInput, setStartDateInput] = useState<string>(startDateIso);
+  const [startDateError, setStartDateError] = useState<string>("");
 
   const [trendScope, setTrendScope] = useState<"All" | "Weekdays" | "Weekends">(
     "All"
@@ -90,6 +93,11 @@ export default function ActivityClock() {
     const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
+
+  useEffect(() => {
+    setStartDateInput(startDateIso);
+    setStartDateError("");
+  }, [startDateIso]);
 
   // Initial load
   useEffect(() => {
@@ -144,13 +152,26 @@ export default function ActivityClock() {
           setStart(clamped);
         }
 
-        // history (inclusive from START_DATE_ISO .. today)
+      } catch (e) {
+        console.error("ActivityClock load error", e);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      setLoading(true);
+      try {
+        const today = yyyyMmDdLocal();
         const logs = [];
-        const startD = new Date(START_DATE_ISO + "T00:00:00");
-        const todayStr = today;
+        const startD = new Date(startDateIso + "T00:00:00");
         for (
           let d = new Date(startD);
-          yyyyMmDdLocal(d) <= todayStr;
+          yyyyMmDdLocal(d) <= today;
           d.setDate(d.getDate() + 1)
         ) {
           const dayKey = yyyyMmDdLocal(d);
@@ -162,14 +183,18 @@ export default function ActivityClock() {
           } catch {}
           logs.push(data && data.date ? data : { date: dayKey, sessions: [] });
         }
-        setHistory(logs);
+        if (!cancelled) setHistory(logs);
       } catch (e) {
-        console.error("ActivityClock load error", e);
+        console.error("ActivityClock history load error", e);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     })();
-  }, []);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [startDateIso]);
 
   // Today’s breakdown (local day)
   const todayBreakdown = useMemo<TodayBreakdown>(() => {
@@ -638,6 +663,16 @@ export default function ActivityClock() {
     [todayLog.sessions]
   );
 
+  function applyStartDate() {
+    const normalized = normalizeStartDateInput(startDateInput);
+    if (!normalized) {
+      setStartDateError("Enter a valid date on or before today.");
+      return;
+    }
+    setStartDateError("");
+    setStartDateIso(normalized);
+  }
+
   return (
     <div className="habit-tracker">
       <h2 className="page-title">Activity Clock</h2>
@@ -647,10 +682,14 @@ export default function ActivityClock() {
         start={start}
         elapsedMins={elapsedMins}
         elapsedLabel={elapsedLabel}
+        startDateInput={startDateInput}
+        startDateError={startDateError}
         nameInput={nameInput}
         minutesInput={minutesInput}
         names={names}
         isBusy={isLogging || isUndoing}
+        onStartDateChange={setStartDateInput}
+        onApplyStartDate={applyStartDate}
         onNameChange={setNameInput}
         onMinutesChange={setMinutesInput}
         onLog={logSinceLastStop}
@@ -665,12 +704,12 @@ export default function ActivityClock() {
       <TodayVsUsualCard
         todayBreakdown={todayBreakdown}
         historical={historical}
-        startDateIso={START_DATE_ISO}
+        startDateIso={startDateIso}
       />
 
       {/* Trends */}
       <TrendsCard
-        startDateIso={START_DATE_ISO}
+        startDateIso={startDateIso}
         dayCount={historical.dayCount}
         topN={TOP_N}
         trendScope={trendScope}

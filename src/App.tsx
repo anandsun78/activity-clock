@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, NavLink, Route, Routes } from "react-router-do
 import ActivityClock from "./components/ActivityClock";
 import HabitTracker from "./components/HabitTracker";
 import { NAV_ITEMS, ROUTES } from "./constants/routes";
+import { StartDateProvider } from "./startDate";
 
 function NavBar() {
   return (
@@ -47,7 +48,9 @@ function AppShell() {
 export default function App() {
   return (
     <BrowserRouter>
-      <AppShell />
+      <StartDateProvider>
+        <AppShell />
+      </StartDateProvider>
     </BrowserRouter>
   );
 }

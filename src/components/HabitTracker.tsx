@@ -12,7 +12,6 @@ import VacationDaysPanel from "./VacationDaysPanel";
 import {
   HABITS,
   STUDY_KEYS,
-  START_DATE,
   WASTE_LIMIT_MINUTES,
 } from "./habitTracker/constants";
 import DailyMetrics from "./habitTracker/DailyMetrics";
@@ -26,6 +25,7 @@ import type {
 } from "./habitTracker/types";
 import { getStudyValFrom, isFiniteNum, minutesSince, safeAvg } from "./habitTracker/utils";
 import { useHabitData, useHabitHistory } from "./habitTracker/hooks";
+import { normalizeStartDateInput, useStartDate } from "../startDate";
 
 /**
  * Component: HabitTracker
@@ -42,13 +42,21 @@ import { useHabitData, useHabitHistory } from "./habitTracker/hooks";
  */
 
 const HabitTracker = () => {
+  const { startDateIso, setStartDateIso } = useStartDate();
   // "today" is the local day key
   const today = yyyyMmDdLocal();
+  const [startDateInput, setStartDateInput] = React.useState(startDateIso);
+  const [startDateError, setStartDateError] = React.useState("");
 
   const [vacationDays] = useVacationDays();
   const { habitData, loading, toggleHabit, updateNumber, updateStudy, getStudyVal } =
     useHabitData(today);
-  const { history, historyLoading } = useHabitHistory(START_DATE, today);
+  const { history, historyLoading } = useHabitHistory(startDateIso, today);
+
+  useEffect(() => {
+    setStartDateInput(startDateIso);
+    setStartDateError("");
+  }, [startDateIso]);
 
   useEffect(() => {
     document.title = "activity-clock – Habit Tracker";
@@ -101,7 +109,7 @@ const HabitTracker = () => {
   // ---------- aggregates (ALL data since START_DATE) ----------
   const aggregate = useMemo<HabitAggregate>(() => {
     const dates = Object.keys(mergedHistory)
-      .filter((d) => d >= START_DATE && d <= today)
+      .filter((d) => d >= startDateIso && d <= today)
       .sort(); // ascending
 
     const sums: HabitAggregate = {
@@ -206,12 +214,12 @@ const HabitTracker = () => {
     sums.avgTotalStudyPerDay = safeAvg(sums.totalStudy, daysObserved);
 
     return sums;
-  }, [mergedHistory, today]);
+  }, [mergedHistory, startDateIso, today]);
 
   // ---------- weight series for chart ----------
   const weightSeries = useMemo<WeightPoint[]>(() => {
     const dates = Object.keys(mergedHistory)
-      .filter((d) => d >= START_DATE && d <= today)
+      .filter((d) => d >= startDateIso && d <= today)
       .sort(); // ascending
 
     const series: WeightPoint[] = [];
@@ -223,7 +231,7 @@ const HabitTracker = () => {
       }
     }
     return series;
-  }, [mergedHistory, today]);
+  }, [mergedHistory, startDateIso, today]);
 
   const weightDelta = useMemo<WeightDelta | null>(() => {
     if (aggregate.firstWeight === null || aggregate.latestWeight === null)
@@ -244,9 +252,53 @@ const HabitTracker = () => {
     );
   }
 
+  function applyStartDate() {
+    const normalized = normalizeStartDateInput(startDateInput);
+    if (!normalized) {
+      setStartDateError("Enter a valid date on or before today.");
+      return;
+    }
+    setStartDateError("");
+    setStartDateIso(normalized);
+  }
+
   return (
     <div className="habit-tracker">
       <h2 className="page-title">{today}</h2>
+      <div
+        style={{
+          display: "grid",
+          gap: 8,
+          marginBottom: 16,
+          padding: 16,
+          borderRadius: 16,
+          border: "1px solid var(--ac-border)",
+          background: "var(--surface)",
+        }}
+      >
+        <strong>History start date</strong>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <input
+            type="date"
+            value={startDateInput}
+            onChange={(e) => setStartDateInput(e.target.value)}
+            max={today}
+            style={{
+              padding: "10px 12px",
+              borderRadius: 12,
+              border: "1px solid var(--ac-border)",
+              background: "var(--surface)",
+              color: "var(--ink)",
+            }}
+          />
+          <button onClick={applyStartDate} className="chip">
+            Apply start date
+          </button>
+        </div>
+        {startDateError && (
+          <div style={{ fontSize: 12, color: "#ef4444" }}>{startDateError}</div>
+        )}
+      </div>
 
       {/* Habits */}
       <HabitList
@@ -281,7 +333,7 @@ const HabitTracker = () => {
         aggregate={aggregate}
         weightDelta={weightDelta}
         historyLoading={historyLoading}
-        startDate={START_DATE}
+        startDate={startDateIso}
       />
       <VacationDaysPanel />
     </div>
